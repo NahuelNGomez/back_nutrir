@@ -1,0 +1,545 @@
+{% extends "base_site_prueba.html" %}
+
+{% block content %}
+    <h1> Reportes geograficos </h1>
+    <hr>
+	<br>
+	<div class="comedores-provincia-chart" style="float: left; width:75%;">
+		<h3 style="font-size: 1.1rem">Cantidad de comedores por Provincia</h3>
+		<canvas id="comedores-provincia-chart"></canvas>
+	</div>
+
+	<div class="filter-provincia" style="float: left; width:100%; margin-top: 15px; margin-bottom: 15px;">
+		<h3 style="font-size: 1.1rem">Cantidad de comedores por Departamento</h3>
+		<label for="prov_dep">Provincia:</label>
+		<select name="provincia" id="prov_dep" onclick="graficarDepartamentos()">
+			<option value="">Seleccione una provincia</option>
+			{% for p in provincias %}
+				<option value={{p.provincia__nombre}}>{{p.provincia__nombre}}</option>
+			{% endfor %}
+		</select>
+	</div>
+
+	<div class="comedores-departamento-chart" id="div-comedores-departamento-chart" style="float: left; border: 2px solid #ccc; align-content: center; display: inline-grid;">
+		<canvas style="display:none" id="comedores-departamento-chart" style="width=100%; height=100%"></canvas>
+		<h3 id="comedores-departamento-text" style="text-align:center;">Seleccione una provincia para visualizar el grafico</h3>
+	</div>
+
+	<div class="filter-departamento" style="float: left; width:100%; margin-top: 15px; margin-bottom: 15px;">
+		<h3 style="font-size: 1.1rem">Cantidad de comedores por Gobierno Local</h3>
+		<label for="dep_gl">Departamento:</label>
+		<select name="departamento" id="dep_gl" onclick="graficarGobiernosLocales()">
+			<option value="">Seleccione el departamento para filtrar el siguiente grafico</option>
+		</select>
+	</div>
+
+	<div class="comedores-gobierno-local-chart" id="div-comedores-gobierno-local-chart" style="float: left; width: 80%; border: 2px solid #ccc;  align-content: center; display: inline-grid;">
+		<canvas style="display:none" id="comedores-gobierno-local-chart" style="width=100%; height=100%"></canvas>
+		<h3 id="comedores-gobierno-local-text" style="text-align:center; ">Por favor seleccione un departamento para visualizar el grafico</h3>
+	</div>
+
+	<div class="filter-gobierno-local" style="float: left; width:100%; margin-top: 15px; margin-bottom: 15px;">
+		<h3 style="font-size: 1.1rem">Cantidad de comedores por Localidad</h3>
+		<label for="gl_loc">Gobierno local:</label>
+		<select name="departamento" id="gl_loc" onclick="graficarLocalidades()">
+			<option value="">Seleccione el gobierno local para filtrar el siguiente grafico</option>
+		</select>
+	</div>
+
+	<div class="comedores-localidad-chart" id="div-comedores-localidad-chart" style="float: left; width: 80%; border: 2px solid #ccc; align-content: center; display: inline-grid;">
+		<canvas style="display:none" id="comedores-localidad-chart" style="width=100%; height=100%"></canvas>
+		<h3 id="comedores-localidad-text" style="text-align:center; ">Por favor seleccione un gobierno local para visualizar el grafico</h3>
+	</div>
+
+	<div style="float: left; width: 100%;">
+		<br>
+		<h1> Reportes por organizacion </h1>
+		<hr>
+		<br>
+	</div>
+
+	<div class="comedores-organizacion-chart" style="float: left; width:75%;">
+		<h3 style="font-size: 1.1rem">Cantidad de comedores por Organizacion</h3>
+		<canvas id="comedores-organizacion-chart"></canvas>
+	</div>
+
+	<div class="filter-organizacion" style="float: left; width:100%; margin-top: 15px; margin-bottom: 15px;">
+		<h3 style="font-size: 1.1rem">Cantidad de comedores por Organizacion Regional</h3>
+		<label for="or_org">Organizacion:</label>
+		<select name="organizacion" id="or_org" onclick="graficarOrganizacionesRegionales()">
+			<option value="">Seleccione una organizacion</option>
+			{% for o in comedores_organizaciones %}
+				<option value={{o}}>{{o}}</option>
+			{% endfor %}]
+		</select>
+		<h7 style="margin-left:10px;">Aclaracion: Solo aparecen las organizaciones que tienen organizaciones regionales</h7>
+	</div>
+
+	<div class="comedores-organizacion-regional-chart" id="div-comedores-organizacion-regional-chart" style="float: left; width: 80%; border: 2px solid #ccc; align-content: center; display: inline-grid;">
+		<canvas style="display:none" id="comedores-organizacion-regional-chart" style="width=100%; height=100%"></canvas>
+		<h3 id="comedores-organizacion-regional-text" style="text-align:center; ">Seleccione una organizacion para visualizar el grafico</h3>
+	</div>
+
+
+    {{ block.super }}
+
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.0/Chart.min.js"></script>
+    <script>
+
+		// funcion para generar un color random
+		function randomColorGenerator() {
+            return '#' + (Math.random().toString(16) + '0000000').slice(2, 8);
+        };
+
+		// GRAFICO DEPARTAMENTO POR PROVINCIA -------------------------------------------------------------------------------------------------------------------
+
+		// creo el dataset de departamentos para el grafico
+
+		let departamentosDataSet = [];
+		{% for d in comedores_departamento %}
+			departamentosDataSet.push({
+				provincia: "{{d.provincia__nombre}}",
+				label: "{{d.departamento__nombre}}",
+			 	backgroundColor: randomColorGenerator(),
+				data: [{{d.dcount}}]
+			})
+		{% endfor %}
+
+		// funcion para graficar los comedores por departamento filtrado por provincia
+
+		let lineChartDepartamento = null;
+    	function graficarDepartamentos()
+		{
+
+			// Obtengo la provincia seleccionada
+		   	let p = document.getElementById("prov_dep");
+			let text = p.options[p.selectedIndex].text;
+
+
+			// Agrego los detartamentos para filtrar el grafico de gobiernos locales
+			agregarDepartamentos(text);
+
+			// Cambio el grafico de gobiernos locales por el texto
+			ctx = document.getElementById("comedores-gobierno-local-chart");
+			chartText = document.getElementById("comedores-gobierno-local-text");
+			ctx.style.display = "none";
+			chartText.style.display = "block";
+
+			// Cambio el grafico de localidad por el texto
+			ctx = document.getElementById("comedores-localidad-chart");
+			chartText = document.getElementById("comedores-localidad-text");
+			ctx.style.display = "none";
+			chartText.style.display = "block";
+
+			// Obtengo el texto y el canva de departamento
+			ctx = document.getElementById("comedores-departamento-chart");
+			chartText = document.getElementById("comedores-departamento-text");
+
+			// Filtro la lista de departamentos por provincia
+			const chartDataSet = departamentosDataSet.filter((departamentoData) => {
+				return departamentoData.provincia === text;
+			})
+
+			if (chartDataSet.length) {
+
+				//Cambio el texto por el grafico
+				ctx.style.display = "block";
+				chartText.style.display = "none";
+
+				if (lineChartDepartamento) {
+					lineChartDepartamento.config.data.datasets = chartDataSet;
+					lineChartDepartamento.update();
+				} else {
+					lineChartDepartamento = new Chart(ctx, {
+						type: "bar",
+						data: {
+							datasets: chartDataSet
+						},
+						options: {
+						scales: {
+						  yAxes: [{
+							ticks: {
+							  beginAtZero: true
+							}
+						  }],
+						  xAxes: [{
+							barPercentage: 0.8
+						  }]
+						},
+						legend: {display: true},
+						}
+					});
+				}
+			}
+		}
+
+		// GRAFICO GOBIERNOS LOCALES POR DEPARTAMENTO -----------------------------------------------------------------------------------------------------------
+
+		// creo la lista de departamentos y provincias
+
+		let departamentos = [];
+		{% for d in comedores_departamento %}
+			departamentos.push({
+				provincia: "{{d.provincia__nombre}}",
+				departamento: "{{d.departamento__nombre}}",
+			})
+		{% endfor %}
+
+		// creo el dataset de gobiernos locales
+
+		let gobiernosLocalesDataSet = [];
+		{% for d in comedores_gobierno_local %}
+			gobiernosLocalesDataSet.push({
+				provincia: "{{d.provincia__nombre}}",
+				departamento: "{{d.departamento__nombre}}",
+				label: "{{d.gobierno_local__nombre}}",
+			 	backgroundColor: randomColorGenerator(),
+				data: [{{d.dcount}}]
+			})
+		{% endfor %}
+
+		// funcion para cambiar dinamicamente las opciones del select de departamentos
+
+		function agregarDepartamentos(text){
+
+			var select = document.getElementById("dep_gl");
+
+			for (o in select.options){
+					select.remove(o);
+			}
+
+			let departamentosFiltrados = departamentos.filter((departamento) => {
+							return departamento.provincia === text;
+								})
+
+			const option = document.createElement('option');
+					option.value = ""
+					option.text = "Seleccione el departamento para filtrar el siguiente grafico"
+					select.appendChild(option)
+
+			for (d in departamentosFiltrados) {
+					const option = document.createElement('option');
+					option.value = departamentosFiltrados[d].departamento
+					option.text = departamentosFiltrados[d].departamento
+					select.appendChild(option)
+			}
+
+		};
+
+		//  funcion para graficar los comedores por gobierno local filtrado por departamento
+
+		lineChartGobiernoLocal = null;
+    	function graficarGobiernosLocales()
+		{
+		   	let d = document.getElementById("dep_gl");
+			let text_d = d.options[d.selectedIndex].text;
+
+			let p = document.getElementById("prov_dep");
+			let text_p = p.options[p.selectedIndex].text;
+
+			agregarLocalidades(text_p, text_d)
+
+			// Cambio el grafico de localidad por el texto
+			ctx = document.getElementById("comedores-localidad-chart");
+			chartText = document.getElementById("comedores-localidad-text");
+			ctx.style.display = "none";
+			chartText.style.display = "block";
+
+			ctx = document.getElementById("comedores-gobierno-local-chart");
+			chartText = document.getElementById("comedores-gobierno-local-text");
+
+			const chartDataSet = gobiernosLocalesDataSet.filter((data) => {
+							return data.departamento === text_d && data.provincia === text_p
+
+						})
+
+			if (chartDataSet.length) {
+				ctx.style.display = "block";
+				chartText.style.display = "none";
+				if (lineChartGobiernoLocal) {
+					lineChartGobiernoLocal.config.data.datasets = chartDataSet;
+					lineChartGobiernoLocal.update();
+				} else {
+					lineChartGobiernoLocal = new Chart(ctx, {
+						type: "bar",
+						data: {
+							datasets: chartDataSet
+						},
+						options: {
+						scales: {
+						  yAxes: [{
+							ticks: {
+							  beginAtZero: true
+							}
+						  }],
+						  xAxes: [{
+							barPercentage: 0.8
+						  }]
+						},
+						legend: {display: true},
+						}
+					});
+				}
+			}
+		}
+
+		// GRAFICO LOCALIDAD POR GOBIERNO LOCAL -----------------------------------------------------------------------------------------------------------
+
+		// creo la lista de gobiernos locales, departamentos y provincias
+
+		let gobiernos_locales = [];
+		{% for d in comedores_gobierno_local %}
+			gobiernos_locales.push({
+				provincia: "{{d.provincia__nombre}}",
+				departamento: "{{d.departamento__nombre}}",
+				gobierno_local: "{{d.gobierno_local__nombre}}",
+			})
+		{% endfor %}
+
+		// creo el dataset de las localidades
+
+		let localidadesDataSet = [];
+		{% for d in comedores_localidad %}
+			localidadesDataSet.push({
+				provincia: "{{d.provincia__nombre}}",
+				departamento: "{{d.departamento__nombre}}",
+				gobierno_local: "{{d.gobierno_local__nombre}}",
+				label: "{{d.localidad__nombre}}",
+			 	backgroundColor: randomColorGenerator(),
+				data: [{{d.dcount}}]
+			})
+		{% endfor %}
+
+		// funcion para cambiar dinamicamente las opciones del select de gobierno local
+
+		function agregarLocalidades(text_p, text_d){
+
+			var select = document.getElementById("gl_loc");
+
+			for (o in select.options){
+					select.remove(o);
+			}
+
+			let gobiernosLocalesFiltrados = gobiernos_locales.filter((gl) => {
+							return gl.departamento === text_d && gl.provincia === text_p;
+								})
+
+			const option = document.createElement('option');
+					option.value = ""
+					option.text = "Seleccione el gobierno local para filtrar el siguiente grafico"
+					select.appendChild(option)
+
+			for (d in gobiernosLocalesFiltrados) {
+					const option = document.createElement('option');
+					option.value = gobiernosLocalesFiltrados[d].gobierno_local
+					option.text = gobiernosLocalesFiltrados[d].gobierno_local
+					select.appendChild(option)
+			}
+
+		};
+
+		//  funcion para graficar los comedores por localidad filtrado por gobierno local
+
+		lineChartLocalidad = null;
+    	function graficarLocalidades()
+		{
+			let gl = document.getElementById("gl_loc");
+			let text_gl = gl.options[gl.selectedIndex].text;
+
+		   	let d = document.getElementById("dep_gl");
+			let text_d = d.options[d.selectedIndex].text;
+
+			let p = document.getElementById("prov_dep");
+			let text_p = p.options[p.selectedIndex].text;
+
+			ctx = document.getElementById("comedores-localidad-chart");
+			chartText = document.getElementById("comedores-localidad-text");
+
+			const chartDataSet = localidadesDataSet.filter((data) => {
+							return data.gobierno_local === text_gl && data.departamento === text_d && data.provincia === text_p
+
+						})
+
+			if (chartDataSet.length) {
+				ctx.style.display = "block";
+				chartText.style.display = "none";
+				if (lineChartLocalidad) {
+					lineChartLocalidad.config.data.datasets = chartDataSet;
+					lineChartLocalidad.update();
+				} else {
+					lineChartLocalidad = new Chart(ctx, {
+						type: "bar",
+						data: {
+							datasets: chartDataSet
+						},
+						options: {
+						scales: {
+						  yAxes: [{
+							ticks: {
+							  beginAtZero: true
+							}
+						  }],
+						  xAxes: [{
+							barPercentage: 0.8
+						  }]
+						},
+						legend: {display: true},
+						}
+					});
+				}
+			}
+		}
+
+		// GRAFICO DE PROVINCIAS ---------------------------------------------------------------------------------------------------------------------------------
+
+		// configuracion para el grafico de torta
+
+		var options = {
+            responsive: true,
+            maintainAspectRatio: true,
+            legend: {
+                position: 'left'
+            },
+            title: {
+                display: true
+            },
+            animation: {
+                animateScale: true,
+                animateRotate: true
+            }
+        };
+
+		// creo el grafico de torta
+
+		var ctx = document.getElementById("comedores-provincia-chart");
+		lineChart = new Chart(ctx, {
+			    type: "pie",
+			    data: {
+					labels: [{% for p in comedores_provincia %}
+								"{{p.provincia__nombre}}",
+						   	{% endfor %}],
+					datasets: [{
+						data: [{% for p in comedores_provincia %}
+									{{p.dcount}},
+								{% endfor %}],
+						backgroundColor: [{% for p in comedores_provincia %}
+											randomColorGenerator(),
+										{% endfor %}],
+						}]
+			  },
+			  options: options
+			});
+
+		// GRAFICO ORGANIZACION REGIONAL POR ORGANIZACION ---------------------------------------------------------------------------------------------------------
+
+		// creo el dataset de organizaciones regionales para el grafico
+
+		let organizacionRegionalDataSet = [];
+		{% for o in comedores_organizacion_regional %}
+			organizacionRegionalDataSet.push({
+				organizacion: "{{o.organizacion_regional__organizacion_superior__nombre}}",
+				label: "{{o.organizacion_regional__nombre}}",
+			 	backgroundColor: randomColorGenerator(),
+				data: [{{o.dcount}}]
+			})
+		{% endfor %}
+
+		// funcion para graficar los comedores por organizacion regional filtrado por organizacion
+
+		let lineChartOrganizacionRegional = null;
+    	function graficarOrganizacionesRegionales()
+		{
+
+			// Obtengo la organizacion seleccionada
+		   	let o = document.getElementById("or_org");
+			let text = o.options[o.selectedIndex].text;
+
+			// Obtengo el texto y el canva de organizaciones regionales
+			ctx = document.getElementById("comedores-organizacion-regional-chart");
+			chartText = document.getElementById("comedores-organizacion-regional-text");
+
+			// Filtro la lista de organizaciones regionales por organizacion
+			const chartDataSet = organizacionRegionalDataSet.filter((organizacion) => {
+				return organizacion.organizacion === text;
+			})
+
+			if (chartDataSet.length) {
+
+				//Cambio el texto por el grafico
+				ctx.style.display = "block";
+				chartText.style.display = "none";
+
+				if (lineChartOrganizacionRegional) {
+					lineChartOrganizacionRegional.config.data.datasets = chartDataSet;
+					lineChartOrganizacionRegional.update();
+				} else {
+					lineChartOrganizacionRegional = new Chart(ctx, {
+						type: "bar",
+						data: {
+							datasets: chartDataSet
+						},
+						options: {
+						scales: {
+						  yAxes: [{
+							ticks: {
+							  beginAtZero: true
+							}
+						  }],
+						  xAxes: [{
+							barPercentage: 0.8
+						  }]
+						},
+						legend: {display: true},
+						}
+					});
+				}
+			}
+		}
+
+		// GRAFICO DE ORGANIZACIONES ----------------------------------------------------------------------------------------------------------------------------
+
+		// creo el grafico de torta
+		var ctx = document.getElementById("comedores-organizacion-chart");
+		lineChart = new Chart(ctx, {
+			    type: "pie",
+			    data: {
+					labels: [{% for o in comedores_organizacion %}
+								"{{o.organizacion}}",
+						   	{% endfor %}],
+					datasets: [{
+						data: [{% for o in comedores_organizacion%}
+									'{{o.dcount}}',
+								{% endfor %}],
+						backgroundColor: [{% for p in comedores_organizacion %}
+												randomColorGenerator(),
+										{% endfor %}],
+						}]
+			  },
+			  options: options
+		});
+
+        function resizeDivs() {
+			var width = document.getElementById("comedores-provincia-chart").offsetWidth;
+			var height = document.getElementById("comedores-provincia-chart").offsetHeight;
+
+			document.getElementById("div-comedores-departamento-chart").style.width = width.toString()+"px";
+			document.getElementById("div-comedores-departamento-chart").style.height = height.toString()+"px";
+
+			document.getElementById("div-comedores-gobierno-local-chart").style.width = width.toString()+"px";
+			document.getElementById("div-comedores-gobierno-local-chart").style.height = height.toString()+"px";
+
+			document.getElementById("div-comedores-localidad-chart").style.width = width.toString()+"px";
+			document.getElementById("div-comedores-localidad-chart").style.height = height.toString()+"px";
+
+			document.getElementById("div-comedores-organizacion-regional-chart").style.width = width.toString()+"px";
+			document.getElementById("div-comedores-organizacion-regional-chart").style.height = height.toString()+"px";
+		}
+
+		window.onresize = resizeDivs;
+
+		document.addEventListener( "DOMContentLoaded", resizeDivs());
+
+    </script>
+
+{% endblock %}
