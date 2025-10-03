@@ -154,100 +154,140 @@ class EncuestasViewList(generics.ListAPIView):
 	"""
 	def post(self, request):
 		encuesta = request.data['encuesta']
-		comida1 = request.data['comida1']
-		comida2 = request.data['comida2']
-		comida3 = request.data['comida3']
-		serializerComida1 = None
-		serializerComida2 = None
-		serializerComida3 = None
+		
+		# Log para debuggear los datos recibidos
+		print("=== DEBUG ENCUESTA POST ===")
+		print("Request data keys:", list(request.data.keys()))
+		print("Request data:", request.data)
+		
+		# Manejar tanto el formato antiguo (comida1, comida2, comida3) como el nuevo (comidas array)
+		comidas_data = []
+		
+		if 'comidas' in request.data:
+			# Nuevo formato: array de comidas
+			comidas_data = request.data['comidas']
+			print("Usando nuevo formato - comidas_data:", comidas_data)
+		else:
+			# Formato antiguo: comida1, comida2, comida3
+			comida1 = request.data.get('comida1', {'comida': 'null', 'alimento': []})
+			comida2 = request.data.get('comida2', {'comida': 'null', 'alimento': []})
+			comida3 = request.data.get('comida3', {'comida': 'null', 'alimento': []})
+			
+			print("Usando formato antiguo:")
+			print("comida1:", comida1)
+			print("comida2:", comida2)
+			print("comida3:", comida3)
+			
+			# Convertir formato antiguo a nuevo formato
+			if comida1['comida'] != 'null':
+				comidas_data.append(comida1)
+			if comida2['comida'] != 'null':
+				comidas_data.append(comida2)
+			if comida3['comida'] != 'null':
+				comidas_data.append(comida3)
+		
+		print("comidas_data final:", comidas_data)
+		
+		# Filtrar comidas vacías y duplicadas
+		comidas_filtradas = []
+		comidas_vistas = set()
+		
+		for comida in comidas_data:
+			comida_id = comida.get('comida')
+			alimentos = comida.get('alimento', [])
+			
+			# Solo agregar si tiene alimentos y no es duplicada
+			if alimentos and len(alimentos) > 0 and comida_id not in comidas_vistas:
+				comidas_filtradas.append(comida)
+				comidas_vistas.add(comida_id)
+				print(f"Comida {comida_id} agregada - alimentos: {len(alimentos)}")
+			else:
+				print(f"Comida {comida_id} filtrada - vacía o duplicada")
+		
+		print("comidas_filtradas:", comidas_filtradas)
+		comidas_data = comidas_filtradas
+		
 		usuario = self.request.user
 		responsable_comedor = usuario.groups.filter(name='Responsable Comedor').exists()
 		if responsable_comedor:
-			if comida1['comida'] == 'null' and comida2['comida'] == 'null' and comida3['comida'] == 'null':
+			if len(comidas_data) == 0:
 				return Response(
 					{"res": "La encuesta debe tener al menos una comida"},
 					status=status.HTTP_400_BAD_REQUEST
 				)
 			serializerEncuesta = EncuestaSerializer(data=encuesta)
 			serializerEncuesta.is_valid(raise_exception=True)
-			if comida1['comida']:
-				if not comida1['alimento']:
+			
+			# Validar cada comida
+			serializers_comidas = []
+			for i, comida in enumerate(comidas_data):
+				print(f"=== VALIDANDO COMIDA {i+1} ===")
+				print(f"comida: {comida}")
+				print(f"comida.get('alimento'): {comida.get('alimento')}")
+				print(f"comida.get('alimento') is None: {comida.get('alimento') is None}")
+				print(f"comida.get('alimento') == []: {comida.get('alimento') == []}")
+				print(f"len(comida.get('alimento', [])): {len(comida.get('alimento', []))}")
+				
+				if not comida.get('alimento'):
+					print(f"ERROR: La comida {i+1} no tiene alimentos")
 					return Response(
-						{"res": "Las comida1 tiene que tener al menos un alimento"},
+						{"res": f"La comida {i+1} tiene que tener al menos un alimento"},
 						status=status.HTTP_400_BAD_REQUEST
 					)
-				data = {
-					'alimento': comida1['alimento'],
-					'comida': comida1['comida']
-				}
-				serializerComida1 = ComidaEncuestaSerializer(data=data)
-				serializerComida1.is_valid(raise_exception=True)
-			if comida2['comida']:
-				if not comida2['alimento']:
+				
+				# Verificar si los alimentos tienen datos válidos
+				alimentos = comida.get('alimento', [])
+				print(f"alimentos: {alimentos}")
+				print(f"len(alimentos): {len(alimentos)}")
+				
+				if len(alimentos) == 0:
+					print(f"ERROR: La comida {i+1} tiene array de alimentos vacío")
 					return Response(
-						{"res": "Las comidas2 tiene que tener al menos un alimento"},
+						{"res": f"La comida {i+1} tiene que tener al menos un alimento"},
 						status=status.HTTP_400_BAD_REQUEST
 					)
+				
 				data = {
-					'alimento': comida2['alimento'],
-					'comida': comida2['comida'],
+					'alimento': comida['alimento'],
+					'comida': comida['comida']
 				}
-				serializerComida2 = ComidaEncuestaSerializer(data=data)
-				serializerComida2.is_valid(raise_exception=True)
-			if comida3['comida']:
-				if not comida3['alimento']:
-					return Response(
-						{"res": "Las comida3 tiene que tener al menos un alimento"},
-						status=status.HTTP_400_BAD_REQUEST
-					)
-				data = {
-					'alimento': comida3['alimento'],
-					'comida': comida3['comida'],
-				}
-				serializerComida3 = ComidaEncuestaSerializer(data=data)
-				serializerComida3.is_valid(raise_exception=True)
+				print(f"data para serializer: {data}")
+				
+				serializer_comida = ComidaEncuestaSerializer(data=data)
+				serializer_comida.is_valid(raise_exception=True)
+				serializers_comidas.append(serializer_comida)
 			serializerEncuesta.save()
 			respuesta = {}
 			respuesta['encuesta'] = serializerEncuesta.data
-			if serializerComida1:
-				for a in comida1['alimento']:
+			
+			# Guardar cada comida y sus alimentos
+			for i, (comida, serializer_comida) in enumerate(zip(comidas_data, serializers_comidas)):
+				print(f"=== GUARDANDO COMIDA {i+1} ===")
+				print(f"comida: {comida}")
+				print(f"comida['alimento']: {comida['alimento']}")
+				
+				for j, a in enumerate(comida['alimento']):
+					print(f"--- ALIMENTO {j+1} ---")
+					print(f"alimento: {a}")
+					
 					data = {
 						'alimento': a['alimento'],
 						'encuesta': serializerEncuesta.data['id'],
-						'comida': comida1['comida'],
+						'comida': comida['comida'],
 						'cantidad': a['cantidad'],
 						'unidad': a['unidad']
 					}
+					print(f"data para AlimentoEncuestaCompletoSerializer: {data}")
+					
 					alimento = AlimentoEncuestaCompletoSerializer(data=data)
+					if not alimento.is_valid():
+						print(f"ERROR en serializer de alimento: {alimento.errors}")
 					alimento.is_valid(raise_exception=True)
 					alimento.save()
-				respuesta['comida1'] = serializerComida1.data
-			if serializerComida2:
-				for a in comida2['alimento']:
-					data = {
-						'alimento': a['alimento'],
-						'encuesta': serializerEncuesta.data['id'],
-						'comida': comida2['comida'],
-						'cantidad': a['cantidad'],
-						'unidad': a['unidad']
-					}
-					alimento = AlimentoEncuestaCompletoSerializer(data=data)
-					alimento.is_valid(raise_exception=True)
-					alimento.save()
-				respuesta['comida2'] = serializerComida2.data
-			if serializerComida3:
-				for a in comida3['alimento']:
-					data = {
-						'alimento': a['alimento'],
-						'encuesta': serializerEncuesta.data['id'],
-						'comida': comida3['comida'],
-						'cantidad': a['cantidad'],
-						'unidad': a['unidad']
-					}
-					alimento = AlimentoEncuestaCompletoSerializer(data=data)
-					alimento.is_valid(raise_exception=True)
-					alimento.save()
-				respuesta['comida3'] = serializerComida3.data
+					print(f"Alimento {j+1} guardado exitosamente")
+				
+				respuesta[f'comida{i+1}'] = serializer_comida.data
+				print(f"Comida {i+1} guardada exitosamente")
 			return Response(data=respuesta, status=status.HTTP_201_CREATED)
 		else:
 			return Response(

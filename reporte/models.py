@@ -17,6 +17,12 @@ class ReportesRaciones(models.Model):
     class Meta:
         verbose_name_plural = "Reportes de raciones"
 
+class ReportesNutricionales(models.Model):
+
+    class Meta:
+        verbose_name = "Reportes nutricionales"
+        verbose_name_plural = "Reportes nutricionales"
+
 class ReporteNutricional(models.Model):
 
     comedor = models.ForeignKey(Comedor, models.CASCADE)

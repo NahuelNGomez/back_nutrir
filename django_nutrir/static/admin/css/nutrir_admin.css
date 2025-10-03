@@ -1,0 +1,75 @@
+/* Estilos personalizados para el admin de Nutrir */
+
+/* Personalización del header */
+#header {
+    background-color: #2c3e50;
+    color: white;
+}
+
+#branding h1 {
+    color: white;
+}
+
+/* Personalización de la navegación */
+#nav-sidebar {
+    background-color: #34495e;
+}
+
+#nav-sidebar .module caption {
+    background-color: #2c3e50;
+    color: white;
+}
+
+/* Personalización de los formularios */
+.form-row {
+    margin-bottom: 15px;
+}
+
+/* Personalización de los botones */
+.default, input[type="submit"], input[type="button"], .submit-row input, a.button {
+    background-color: #3498db;
+    border-color: #2980b9;
+}
+
+.default:hover, input[type="submit"]:hover, input[type="button"]:hover, .submit-row input:hover, a.button:hover {
+    background-color: #2980b9;
+}
+
+/* Personalización de los mensajes */
+.messagelist .success {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.messagelist .error {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+
+/* Personalización de las tablas */
+.results table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.results th, .results td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.results th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+/* Personalización del footer */
+#footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    padding: 10px 0;
+    text-align: center;
+    color: #6c757d;
+}

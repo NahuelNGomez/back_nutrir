@@ -41,7 +41,7 @@ class AlimentoEncuesta(models.Model):
 	alimento = models.ForeignKey(Alimento, models.CASCADE)
 	encuesta = models.ForeignKey(Encuesta, models.CASCADE)
 	comida = models.ForeignKey(Comida,  models.CASCADE)
-	cantidad = models.DecimalField(decimal_places=3, max_digits=5, validators=[MinValueValidator(0.001)])
+	cantidad = models.DecimalField(decimal_places=3, max_digits=10, validators=[MinValueValidator(0.001)])
 	unidad = models.ForeignKey(Unidad, models.CASCADE, default=None)
 
 	def __str__(self):

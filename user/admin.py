@@ -8,21 +8,21 @@ from .models import UsuarioPersonalizado
 class UsuarioPersonalizadoAdmin(UserAdmin):
 
     model = UsuarioPersonalizado
-    list_display = ('cuil', 'email', 'first_name','last_name')
+    list_display = ('email', 'first_name','last_name')
     list_filter = ('groups',)
     fieldsets = (
-        (None, {'fields': ('cuil', 'password', 'email', 'first_name', 'last_name', 'genero')}),
+        (None, {'fields': ('password', 'email', 'first_name', 'last_name', 'genero')}),
         ('Permissions', {'fields': ('is_staff', 'is_active')}),
         ('Permisos', {'fields': ('groups',)}),
     )
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('cuil', 'password1', 'password2', 'email', 'first_name', 'last_name', 'genero', 'is_staff', 'is_active','groups',)}
+            'fields': ('password1', 'password2', 'email', 'first_name', 'last_name', 'genero', 'is_staff', 'is_active','groups',)}
         ),
     )
-    search_fields = ('cuil','last_name')
-    ordering = ('cuil',)
+    search_fields = ('email','last_name')
+    ordering = ('email',)
 
 admin.site.register(UsuarioPersonalizado,UsuarioPersonalizadoAdmin)
 admin.site.register(Permission)
