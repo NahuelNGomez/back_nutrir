@@ -7,8 +7,28 @@ from enum import Enum
 
 class Unidad(models.Model):
     nombre = models.CharField(max_length=10, unique=True)
+    equivalencia_gramos = models.DecimalField("Equivalencia en gramos", null=True, blank=True, decimal_places=2, max_digits=16, help_text="Equivalencia de 1 unidad en gramos")
+    equivalencia_ml = models.DecimalField("Equivalencia en ml", null=True, blank=True, decimal_places=2, max_digits=16, help_text="Equivalencia de 1 unidad en ml")
+    
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        # Validar que solo se puede llenar uno de los dos campos
+        if self.equivalencia_gramos and self.equivalencia_ml:
+            raise ValidationError("No se puede especificar equivalencia en gramos y ml al mismo tiempo.")
+        if not self.equivalencia_gramos and not self.equivalencia_ml:
+            raise ValidationError("Debe especificar equivalencia en gramos o ml.")
+    
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+    
     def __str__(self):
+        if self.equivalencia_gramos:
+            return f"{self.nombre} ({self.equivalencia_gramos}g)"
+        elif self.equivalencia_ml:
+            return f"{self.nombre} ({self.equivalencia_ml}ml)"
         return self.nombre
+    
     class Meta:
         verbose_name_plural = "Unidades"
 
@@ -42,4 +62,9 @@ class AlimentoSARA(models.Model):
 
     def __str__(self):
         return self.nombre
+    
+    class Meta:
+        verbose_name = "Alimento SARA"
+        verbose_name_plural = "Alimentos SARA"
+        ordering = ['nombre']
 

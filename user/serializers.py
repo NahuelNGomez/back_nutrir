@@ -5,15 +5,20 @@ from rest_framework import serializers,  exceptions
 from .models import UsuarioPersonalizado
 from django_nutrir import settings
 
+print("=== SERIALIZERS.PY CARGADO ===")
+
 
 class CustomLoginSerializer(LoginSerializer):
     username = None
-    cuil = None
     email = serializers.EmailField()
 
     class Meta:
         model = UsuarioPersonalizado
         fields = ['email']
+    
+    def __init__(self, *args, **kwargs):
+        print("=== CUSTOMLOGINSERIALIZER INICIADO ===")
+        super().__init__(*args, **kwargs)
 
     @transaction.atomic
     def validate(self, attrs):
@@ -37,6 +42,10 @@ class CustomLoginSerializer(LoginSerializer):
 class UserDetailsSerializer(serializers.ModelSerializer):
 	""" Extension de UserDetailsSerializer para que muestre también otros campos cuando te logueas"""
 
+	def __init__(self, *args, **kwargs):
+		print("=== USERDETAILSSERIALIZER INICIADO ===")
+		super().__init__(*args, **kwargs)
+
 	@staticmethod
 	def validate_username(username):
 		if 'allauth.email' not in settings.INSTALLED_APPS:
@@ -48,30 +57,26 @@ class UserDetailsSerializer(serializers.ModelSerializer):
 		username = get_adapter().clean_username(username)
 		return username
 
+	def to_representation(self, instance):
+		"""Override para debuggear el teléfono"""
+		print("=== DEBUG USERDETAILSSERIALIZER ===")
+		print(f"DEBUG - Usuario ID: {instance.pk}")
+		print(f"DEBUG - Teléfono en BD: '{instance.telefono}'")
+		print(f"DEBUG - Tipo de teléfono: {type(instance.telefono)}")
+		print(f"DEBUG - Longitud teléfono: {len(instance.telefono) if instance.telefono else 'None'}")
+		
+		data = super().to_representation(instance)
+		print(f"DEBUG - Teléfono serializado: '{data.get('telefono')}'")
+		print("=== FIN DEBUG ===")
+		return data
+	
+	def get_telefono(self, obj):
+		"""Método específico para el campo teléfono"""
+		print(f"DEBUG - get_telefono llamado para usuario {obj.pk}")
+		print(f"DEBUG - Valor del teléfono: '{obj.telefono}'")
+		return obj.telefono
+
 	class Meta:
-		extra_fields = []
-		read_only = []
-		if hasattr(UsuarioPersonalizado, 'USERNAME_FIELD'):
-			extra_fields.append(UsuarioPersonalizado.USERNAME_FIELD)
-		if hasattr(UsuarioPersonalizado, 'EMAIL_FIELD'):
-			extra_fields.append(UsuarioPersonalizado.EMAIL_FIELD)
-		if hasattr(UsuarioPersonalizado, 'first_name'):
-			extra_fields.append('first_name')
-		if hasattr(UsuarioPersonalizado, 'last_name'):
-			extra_fields.append('last_name')
-		if hasattr(UsuarioPersonalizado, 'telefono'):
-			extra_fields.append('telefono')
-		if hasattr(UsuarioPersonalizado, 'picture'):
-			read_only.append('picture')
-			extra_fields.append('picture')
-		if hasattr(UsuarioPersonalizado, 'date_joined'):
-			read_only.append('date_joined')
-			extra_fields.append('date_joined')
-
-		read_only.append('cuil')
 		model = UsuarioPersonalizado
-		extra_fields.append('groups')
-		read_only.append('groups')
-
-		fields = ('pk', *extra_fields)
-		read_only_fields = read_only
+		fields = ('pk', 'email', 'first_name', 'last_name', 'telefono', 'picture', 'groups')
+		read_only_fields = ('pk', 'picture', 'groups')

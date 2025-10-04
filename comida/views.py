@@ -53,7 +53,7 @@ class ComidaAlimentoView(generics.ListAPIView):
             'nombre': comida.nombre,
             'foto': 'http://'+host+'/media/'+str(comida.foto),
             'alimento': alimentos_extendidos,
-            'horario': comida.horario,
+            'horarios': [{'id': h.id, 'codigo': h.codigo, 'nombre': h.nombre} for h in comida.horarios.all()],
         }
 
         return Response({'data': comida_extendida})
@@ -67,13 +67,13 @@ class ComidaServicioView(generics.ListAPIView):
 
 		if servicio == 'desayuno' or servicio == 'merienda':
 			data = {
-				'bebida': Comida.objects.filter(horario='desayuno_merienda_bebidas').values('id', 'nombre', 'horario').annotate(foto=Concat(Value('http://'+host+'/media/'), 'foto',  output_field=CharField())).order_by('nombre'),
-				'comida': Comida.objects.filter(horario='desayuno_merienda_comida').values('id', 'nombre', 'horario').annotate(foto=Concat(Value('http://'+host+'/media/'), 'foto',  output_field=CharField())).order_by('nombre'),
+				'bebida': Comida.objects.filter(horarios__codigo='desayuno_merienda_bebidas').values('id', 'nombre').annotate(foto=Concat(Value('http://'+host+'/media/'), 'foto',  output_field=CharField())).order_by('nombre'),
+				'comida': Comida.objects.filter(horarios__codigo='desayuno_merienda_comida').values('id', 'nombre').annotate(foto=Concat(Value('http://'+host+'/media/'), 'foto',  output_field=CharField())).order_by('nombre'),
 			}
 		elif servicio == 'cena' or servicio == 'almuerzo': # or servicio == 'olla_popular':
 			data = {
-				'entrada': Comida.objects.filter(horario='almuerzo_cena_entrada').values('id', 'nombre', 'horario').annotate(foto=Concat(Value('http://'+host+'/media/'), 'foto',  output_field=CharField())).order_by('nombre'),
-				'plato principal': Comida.objects.filter(horario='almuerzo_cena_plato_principal').values('id', 'nombre', 'horario').annotate(foto=Concat(Value('http://'+host+'/media/'), 'foto',  output_field=CharField())).order_by('nombre'),
-				'postre': Comida.objects.filter(horario='almuerzo_cena_postre').values('id', 'nombre', 'horario').annotate(foto=Concat(Value('http://'+host+'/media/'), 'foto',  output_field=CharField())).order_by('nombre')
+				'entrada': Comida.objects.filter(horarios__codigo='almuerzo_cena_entrada').values('id', 'nombre').annotate(foto=Concat(Value('http://'+host+'/media/'), 'foto',  output_field=CharField())).order_by('nombre'),
+				'plato principal': Comida.objects.filter(horarios__codigo='almuerzo_cena_plato_principal').values('id', 'nombre').annotate(foto=Concat(Value('http://'+host+'/media/'), 'foto',  output_field=CharField())).order_by('nombre'),
+				'postre': Comida.objects.filter(horarios__codigo='almuerzo_cena_postre').values('id', 'nombre').annotate(foto=Concat(Value('http://'+host+'/media/'), 'foto',  output_field=CharField())).order_by('nombre')
 			}
 		return Response({'data': data})

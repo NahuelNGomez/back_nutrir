@@ -25,7 +25,7 @@ from rest_framework.reverse import reverse_lazy
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 env = environ.Env()
-environ.Env.read_env()
+environ.Env.read_env(BASE_DIR / '.env')
 
 
 # Quick-start development settings - unsuitable for production
@@ -108,7 +108,7 @@ ROOT_URLCONF = "django_nutrir.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [os.path.join(BASE_DIR, 'django_nutrir', 'templates')],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -133,7 +133,7 @@ DATABASES = {
         "NAME": env("DATABASE_NAME"),
         "USER": env("DATABASE_USER"),
         "PASSWORD": env("DATABASE_PASS"),
-        "HOST": "localhost",
+        "HOST": env("DATABASE_HOST"),
         "PORT": env("DATABASE_PORT"),
     }
 }
@@ -223,6 +223,14 @@ MEDIA_URL = "/media/"
 REST_AUTH_SERIALIZERS = {
     "LOGIN_SERIALIZER": "user.serializers.CustomLoginSerializer",
     "USER_DETAILS_SERIALIZER": "user.serializers.UserDetailsSerializer",
+}
+
+# Configuración de Admin Interface
+ADMIN_INTERFACE = {
+    'TITLE': 'Administración de Nutrir',
+    'HEADER': 'Administración de Nutrir',
+    'LOGO_VISIBLE': False,
+    'TITLE_VISIBLE': True,
 }
 
 

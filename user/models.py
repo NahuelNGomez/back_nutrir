@@ -2,7 +2,6 @@ from django.contrib.auth.models import AbstractUser, PermissionsMixin
 from django.db import models
 from django.contrib.auth.base_user import BaseUserManager
 from genero.models import Genero
-from django_nutrir.validaciones import validar_cuil
 
 class UserManager(BaseUserManager):
 
@@ -50,7 +49,6 @@ class UserManager(BaseUserManager):
 class UsuarioPersonalizado(AbstractUser, PermissionsMixin):
 
     # Campos personalizados
-    cuil = models.CharField(max_length=40, unique=True, validators=[validar_cuil])
     cambio_contrasenia = models.BooleanField(default=False, editable=True)
     genero = models.ForeignKey(Genero, models.CASCADE, null=True)
     picture = models.ImageField()
@@ -60,7 +58,7 @@ class UsuarioPersonalizado(AbstractUser, PermissionsMixin):
     USERNAME_FIELD = 'email'
     username = None
     objects = UserManager()
-    REQUIRED_FIELDS = ['cuil', 'first_name', 'last_name']
+    REQUIRED_FIELDS = ['first_name', 'last_name']
 
     def __str__(self):
         return f"{self.email}"

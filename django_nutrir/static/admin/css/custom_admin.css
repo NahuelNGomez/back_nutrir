@@ -1,0 +1,75 @@
+/* Estilos personalizados para el admin de alimentos */
+
+/* Layout mejorado para campos nutricionales */
+.field-hidratos_carbono,
+.field-proteinas,
+.field-grasas,
+.field-grasas_totales,
+.field-energia,
+.field-sodio {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    gap: 10px;
+}
+
+/* Título a la izquierda */
+.field-hidratos_carbono label,
+.field-proteinas label,
+.field-grasas label,
+.field-grasas_totales label,
+.field-energia label,
+.field-sodio label {
+    min-width: 140px;
+    margin-right: 5px;
+    padding-top: 8px;
+    font-weight: bold;
+}
+
+/* Contenedor del input y elementos */
+.field-hidratos_carbono .vTextField,
+.field-proteinas .vTextField,
+.field-grasas .vTextField,
+.field-grasas_totales .vTextField,
+.field-energia .vTextField,
+.field-sodio .vTextField {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    flex: 0 0 auto;
+}
+
+/* Input con G en esquina inferior derecha */
+.field-hidratos_carbono input[type="number"],
+.field-proteinas input[type="number"],
+.field-grasas input[type="number"],
+.field-grasas_totales input[type="number"],
+.field-energia input[type="number"],
+.field-sodio input[type="number"] {
+    width: 120px;
+    padding: 8px 25px 8px 8px;
+    text-align: right;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    position: relative;
+}
+
+/* G se agrega via JavaScript */
+
+/* Texto de ayuda debajo del input */
+.field-hidratos_carbono .help,
+.field-proteinas .help,
+.field-grasas .help,
+.field-grasas_totales .help,
+.field-energia .help,
+.field-sodio .help {
+    font-style: italic;
+    color: #666;
+    font-size: 11px;
+    margin-top: 5px;
+    margin-left: 0;
+    width: 120px;
+    text-align: left;
+    align-self: flex-start;
+}

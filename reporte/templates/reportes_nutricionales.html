@@ -1,0 +1,222 @@
+{% extends "base_site_prueba.html" %}
+
+{% block content %}
+    <h1> Reportes Nutricionales </h1>
+    <hr>
+    <br>
+    
+    <div class="resumen-nutricional" style="float: left; width:100%; margin-bottom: 20px;">
+        <h3 style="font-size: 1.1rem">Resumen General</h3>
+        <p>Total de reportes nutricionales: <strong>{{ total_reportes }}</strong></p>
+    </div>
+
+    <div class="nutricionales-mes-chart" style="float: left; width:90%;">
+        <h3 style="font-size: 1.1rem">Promedios nutricionales por mes (últimos 12 meses)</h3>
+        <canvas id="nutricionales-mes-chart"></canvas>
+    </div>
+
+    <div class="nutricionales-dia-chart" style="float: left; width:90%;">
+        <h3 style="font-size: 1.1rem">Promedios nutricionales por día (últimos 7 días)</h3>
+        <canvas id="nutricionales-dia-chart"></canvas>
+    </div>
+
+    <div class="kilocalorias-mes-chart" style="float: left; width:90%;">
+        <h3 style="font-size: 1.1rem">Kilocalorías por mes</h3>
+        <canvas id="kilocalorias-mes-chart"></canvas>
+    </div>
+
+    <div class="kilocalorias-dia-chart" style="float: left; width:90%;">
+        <h3 style="font-size: 1.1rem">Kilocalorías por día</h3>
+        <canvas id="kilocalorias-dia-chart"></canvas>
+    </div>
+
+    {{ block.super }}
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.0/Chart.min.js"></script>
+    <script>
+
+        // función para generar un color random
+        function randomColorGenerator() {
+            return '#' + (Math.random().toString(16) + '0000000').slice(2, 8);
+        };
+
+        // GRAFICO NUTRICIONALES POR MES -------------------------------------------------------------------------------------------------------------
+
+        // Debug: verificar datos en JavaScript
+        console.log("=== DATOS PARA GRÁFICOS ===");
+        console.log("Promedios mes:", {{ promedios_mes|safe }});
+        console.log("Promedios día:", {{ promedios_dia|safe }});
+
+        // Preparar datos de forma segura
+        var promediosMesData = {{ promedios_mes|safe }};
+        var promediosDiaData = {{ promedios_dia|safe }};
+        
+        // Función para obtener valores seguros
+        function getSafeValue(value, defaultValue = 0) {
+            return (value !== null && value !== undefined && !isNaN(value)) ? value : defaultValue;
+        }
+        
+        // Preparar labels y datos
+        var labelsMes = promediosMesData.map(function(item) { return item.mes; });
+        var labelsDia = promediosDiaData.map(function(item) { return item.dia; });
+        
+        var hidratosMes = promediosMesData.map(function(item) { return getSafeValue(item.hidratos); });
+        var proteinasMes = promediosMesData.map(function(item) { return getSafeValue(item.proteinas); });
+        var grasasSaturadasMes = promediosMesData.map(function(item) { return getSafeValue(item.grasasSaturadas); });
+        var grasasTotalesMes = promediosMesData.map(function(item) { return getSafeValue(item.grasasTotales); });
+        var sodioMes = promediosMesData.map(function(item) { return getSafeValue(item.sodio); });
+        var kilocaloriasMes = promediosMesData.map(function(item) { return getSafeValue(item.kilocalorias); });
+        
+        var hidratosDia = promediosDiaData.map(function(item) { return getSafeValue(item.hidratos); });
+        var proteinasDia = promediosDiaData.map(function(item) { return getSafeValue(item.proteinas); });
+        var grasasSaturadasDia = promediosDiaData.map(function(item) { return getSafeValue(item.grasasSaturadas); });
+        var grasasTotalesDia = promediosDiaData.map(function(item) { return getSafeValue(item.grasasTotales); });
+        var sodioDia = promediosDiaData.map(function(item) { return getSafeValue(item.sodio); });
+        var kilocaloriasDia = promediosDiaData.map(function(item) { return getSafeValue(item.kilocalorias); });
+
+        var ctx = document.getElementById("nutricionales-mes-chart");
+        var nutricionalesMesChart = new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: labelsMes,
+                datasets: [{
+                    label: 'Hidratos (g)',
+                    data: hidratosMes,
+                    backgroundColor: randomColorGenerator(),
+                }, {
+                    label: 'Proteínas (g)',
+                    data: proteinasMes,
+                    backgroundColor: randomColorGenerator(),
+                }, {
+                    label: 'Grasas Saturadas (g)',
+                    data: grasasSaturadasMes,
+                    backgroundColor: randomColorGenerator(),
+                }, {
+                    label: 'Grasas Totales (g)',
+                    data: grasasTotalesMes,
+                    backgroundColor: randomColorGenerator(),
+                }, {
+                    label: 'Sodio (g)',
+                    data: sodioMes,
+                    backgroundColor: randomColorGenerator(),
+                }]
+            },
+            options: {
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true
+                        }
+                    }],
+                    xAxes: [{
+                        barPercentage: 0.8
+                    }]
+                },
+                legend: {display: true},
+            }
+        });
+
+        // GRAFICO NUTRICIONALES POR DIA -------------------------------------------------------------------------------------------------------------
+
+        var ctx2 = document.getElementById("nutricionales-dia-chart");
+        var nutricionalesDiaChart = new Chart(ctx2, {
+            type: "bar",
+            data: {
+                labels: labelsDia,
+                datasets: [{
+                    label: 'Hidratos (g)',
+                    data: hidratosDia,
+                    backgroundColor: randomColorGenerator(),
+                }, {
+                    label: 'Proteínas (g)',
+                    data: proteinasDia,
+                    backgroundColor: randomColorGenerator(),
+                }, {
+                    label: 'Grasas Saturadas (g)',
+                    data: grasasSaturadasDia,
+                    backgroundColor: randomColorGenerator(),
+                }, {
+                    label: 'Grasas Totales (g)',
+                    data: grasasTotalesDia,
+                    backgroundColor: randomColorGenerator(),
+                }, {
+                    label: 'Sodio (g)',
+                    data: sodioDia,
+                    backgroundColor: randomColorGenerator(),
+                }]
+            },
+            options: {
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true
+                        }
+                    }],
+                    xAxes: [{
+                        barPercentage: 0.8
+                    }]
+                },
+                legend: {display: true},
+            }
+        });
+
+        // GRAFICO KILOCALORIAS POR MES -------------------------------------------------------------------------------------------------------------
+
+        var ctx3 = document.getElementById("kilocalorias-mes-chart");
+        var kilocaloriasMesChart = new Chart(ctx3, {
+            type: "line",
+            data: {
+                labels: labelsMes,
+                datasets: [{
+                    label: 'Kilocalorías',
+                    data: kilocaloriasMes,
+                    borderColor: '#ff6384',
+                    backgroundColor: '#ff638480',
+                    fill: false,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true
+                        }
+                    }]
+                },
+                legend: {display: true},
+            }
+        });
+
+        // GRAFICO KILOCALORIAS POR DIA -------------------------------------------------------------------------------------------------------------
+
+        var ctx4 = document.getElementById("kilocalorias-dia-chart");
+        var kilocaloriasDiaChart = new Chart(ctx4, {
+            type: "line",
+            data: {
+                labels: labelsDia,
+                datasets: [{
+                    label: 'Kilocalorías',
+                    data: kilocaloriasDia,
+                    borderColor: '#ff6384',
+                    backgroundColor: '#ff638480',
+                    fill: false,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true
+                        }
+                    }]
+                },
+                legend: {display: true},
+            }
+        });
+
+    </script>
+
+{% endblock %}

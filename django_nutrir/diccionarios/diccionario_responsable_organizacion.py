@@ -269,7 +269,7 @@ diccionario_responsable_organizacion = [
                                    'view': True},
                          'view_only': True},
             {'add_url': '',
-                         'admin_url': '/admin/reporte/reportenutricional/',
+                         'admin_url': '/admin/reporte/reportesnutricionales/',
                          'model': "<class 'reporte.models.ReporteNutricional'>",
                          'name': 'Reporte Nutricional',
                          'object_name': 'ReporteNutricional',

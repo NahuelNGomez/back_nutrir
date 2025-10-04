@@ -12,7 +12,7 @@ class ResponsableOrganizacion(models.Model):
     
 
     def __str__(self):
-        return f"{self.responsable.cuil}"
+        return f"{self.responsable.email}"
 
     class Meta:
         verbose_name_plural = "Responsables de Organizaciones"
