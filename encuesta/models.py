@@ -26,6 +26,7 @@ class Encuesta(models.Model):
     cantidad_rango_2 = models.IntegerField('Cantidad de Comensales - Rango 2', validators=[MinValueValidator(0)])
     cantidad_rango_3 = models.IntegerField('Cantidad de Comensales - Rango 3', validators=[MinValueValidator(0)])
     cantidad_rango_4 = models.IntegerField('Cantidad de Comensales - Rango 4', validators=[MinValueValidator(0)])
+    cantidad_rango_5 = models.IntegerField('Cantidad de Comensales - Adultos Mayores (+60 años)', validators=[MinValueValidator(0)], default=0)
     funcionamiento = models.CharField(max_length=30, choices=FUNCIONAMIENTO_CHOICES)
 
 

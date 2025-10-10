@@ -152,18 +152,18 @@ class ReportesRacionesAdmin(admin.ModelAdmin):
 		r_mes_total = Encuesta.objects.filter(comedor__in=lc, fecha__range=(fecha_limite, today))
 
 		# Cantidad de raciones por mes de los ultimos 12 meses
-		cantidad_raciones_meses = r_mes_total.values('fecha__year', 'fecha__month', 'cantidad_rango_1', 'cantidad_rango_2', 'cantidad_rango_3', 'cantidad_rango_4')
-		cantidad_raciones_meses = cantidad_raciones_meses.values('fecha__year', 'fecha__month').annotate(cantidad=Sum(F('cantidad_rango_1') + F('cantidad_rango_2') + F('cantidad_rango_3') + F('cantidad_rango_4'))).order_by('fecha__year', 'fecha__month')
+		cantidad_raciones_meses = r_mes_total.values('fecha__year', 'fecha__month', 'cantidad_rango_1', 'cantidad_rango_2', 'cantidad_rango_3', 'cantidad_rango_4', 'cantidad_rango_5')
+		cantidad_raciones_meses = cantidad_raciones_meses.values('fecha__year', 'fecha__month').annotate(cantidad=Sum(F('cantidad_rango_1') + F('cantidad_rango_2') + F('cantidad_rango_3') + F('cantidad_rango_4') + F('cantidad_rango_5'))).order_by('fecha__year', 'fecha__month')
 		response.context_data['raciones_mes'] = cantidad_raciones_meses
 
 		# Cantidad de raciones por funcionamiento de los ultimos 12 meses
 		cantidad_raciones_funcionamiento_meses = r_mes_total.values('fecha__year', 'fecha__month', 'cantidad_rango_1', 'cantidad_rango_2', 'cantidad_rango_3', 'cantidad_rango_4', 'funcionamiento')
-		cantidad_raciones_funcionamiento_meses = cantidad_raciones_funcionamiento_meses.values('fecha__year', 'fecha__month', 'funcionamiento').annotate(cantidad=Sum(F('cantidad_rango_1') + F('cantidad_rango_2') + F('cantidad_rango_3') + F('cantidad_rango_4')))
+		cantidad_raciones_funcionamiento_meses = cantidad_raciones_funcionamiento_meses.values('fecha__year', 'fecha__month', 'funcionamiento').annotate(cantidad=Sum(F('cantidad_rango_1') + F('cantidad_rango_2') + F('cantidad_rango_3') + F('cantidad_rango_4') + F('cantidad_rango_5')))
 		response.context_data['raciones_mes_funcionamiento'] = cantidad_raciones_funcionamiento_meses
 
 		# Cantidad de raciones por rango etario de los ultimos 12 meses
-		cantidad_raciones_rango_etario_meses = r_mes_total.values('fecha__year', 'fecha__month', 'cantidad_rango_1', 'cantidad_rango_2', 'cantidad_rango_3', 'cantidad_rango_4')
-		cantidad_raciones_rango_etario_meses = cantidad_raciones_rango_etario_meses.values('fecha__year', 'fecha__month').annotate(cantidad_rango_1=Sum(F('cantidad_rango_1')), cantidad_rango_2=Sum(F('cantidad_rango_2')), cantidad_rango_3=Sum(F('cantidad_rango_3')), cantidad_rango_4=Sum(F('cantidad_rango_4')))
+		cantidad_raciones_rango_etario_meses = r_mes_total.values('fecha__year', 'fecha__month', 'cantidad_rango_1', 'cantidad_rango_2', 'cantidad_rango_3', 'cantidad_rango_4', 'cantidad_rango_5')
+		cantidad_raciones_rango_etario_meses = cantidad_raciones_rango_etario_meses.values('fecha__year', 'fecha__month').annotate(cantidad_rango_1=Sum(F('cantidad_rango_1')), cantidad_rango_2=Sum(F('cantidad_rango_2')), cantidad_rango_3=Sum(F('cantidad_rango_3')), cantidad_rango_4=Sum(F('cantidad_rango_4')), cantidad_rango_5=Sum(F('cantidad_rango_5')))
 		response.context_data['raciones_mes_rango_etario'] = cantidad_raciones_rango_etario_meses
 
 		# Cantidad de raciones por comida de los ultimos 12 meses
@@ -179,13 +179,12 @@ class ReportesRacionesAdmin(admin.ModelAdmin):
 		# Luego creamos una lista de diccionarios con las cantidades correctas
 		cantidad_raciones_comida_meses = []
 		for item in comidas_unicas:
-			encuesta = Encuesta.objects.get(id=item['encuesta'])
-			total_comensales = encuesta.cantidad_rango_1 + encuesta.cantidad_rango_2 + encuesta.cantidad_rango_3 + encuesta.cantidad_rango_4
+			# Usar 1 por cada comida servida (no multiplicar por comensales)
 			cantidad_raciones_comida_meses.append({
 				'encuesta__fecha__year': item['encuesta__fecha__year'],
 				'encuesta__fecha__month': item['encuesta__fecha__month'],
 				'comida__nombre': item['comida__nombre'],
-				'cantidad': total_comensales
+				'cantidad': 1  # 1 comida servida por encuesta
 			})
 		
 		# Agrupamos por fecha y comida, sumando las cantidades
@@ -219,7 +218,7 @@ class ReportesRacionesAdmin(admin.ModelAdmin):
 		today = date.today()
 		td = timedelta(29)
 		raciones_30_dias_total = Encuesta.objects.filter(comedor__in=lc, fecha__range=(today - td, today))
-		raciones_30_dias_total = raciones_30_dias_total.values('fecha').annotate(cantidad=Sum(F('cantidad_rango_1') + F('cantidad_rango_2') + F('cantidad_rango_3') + F('cantidad_rango_4'))).order_by('fecha')
+		raciones_30_dias_total = raciones_30_dias_total.values('fecha').annotate(cantidad=Sum(F('cantidad_rango_1') + F('cantidad_rango_2') + F('cantidad_rango_3') + F('cantidad_rango_4') + F('cantidad_rango_5'))).order_by('fecha')
 		response.context_data['raciones_dia'] = raciones_30_dias_total
 
 		# Cantidad de raciones de los ultimos 7 dias -------------------------------------------------------------------
@@ -231,13 +230,13 @@ class ReportesRacionesAdmin(admin.ModelAdmin):
 
 		# Cantidad de raciones por funcionamiento de los ultimos 7 dias
 
-		cantidad_raciones_funcionamiento_dias = r_semana_total.values('fecha', 'cantidad_rango_1', 'cantidad_rango_2', 'cantidad_rango_3', 'cantidad_rango_4', 'funcionamiento')
-		cantidad_raciones_funcionamiento_dias = cantidad_raciones_funcionamiento_dias.values('fecha', 'funcionamiento').annotate(cantidad=Sum(F('cantidad_rango_1') + F('cantidad_rango_2') + F('cantidad_rango_3') + F('cantidad_rango_4')))
+		cantidad_raciones_funcionamiento_dias = r_semana_total.values('fecha', 'cantidad_rango_1', 'cantidad_rango_2', 'cantidad_rango_3', 'cantidad_rango_4', 'cantidad_rango_5', 'funcionamiento')
+		cantidad_raciones_funcionamiento_dias = cantidad_raciones_funcionamiento_dias.values('fecha', 'funcionamiento').annotate(cantidad=Sum(F('cantidad_rango_1') + F('cantidad_rango_2') + F('cantidad_rango_3') + F('cantidad_rango_4') + F('cantidad_rango_5')))
 		response.context_data['raciones_semana_funcionamiento'] = cantidad_raciones_funcionamiento_dias
 
 		# Cantidad de raciones por rango etario de los ultimos 7 dias
-		cantidad_raciones_rango_etario_dias = r_semana_total.values('fecha', 'cantidad_rango_1', 'cantidad_rango_2', 'cantidad_rango_3', 'cantidad_rango_4')
-		cantidad_raciones_rango_etario_dias = cantidad_raciones_rango_etario_dias.values('fecha').annotate(cantidad_rango_1=Sum(F('cantidad_rango_1')), cantidad_rango_2=Sum(F('cantidad_rango_2')), cantidad_rango_3=Sum(F('cantidad_rango_3')), cantidad_rango_4=Sum(F('cantidad_rango_4')))
+		cantidad_raciones_rango_etario_dias = r_semana_total.values('fecha', 'cantidad_rango_1', 'cantidad_rango_2', 'cantidad_rango_3', 'cantidad_rango_4', 'cantidad_rango_5')
+		cantidad_raciones_rango_etario_dias = cantidad_raciones_rango_etario_dias.values('fecha').annotate(cantidad_rango_1=Sum(F('cantidad_rango_1')), cantidad_rango_2=Sum(F('cantidad_rango_2')), cantidad_rango_3=Sum(F('cantidad_rango_3')), cantidad_rango_4=Sum(F('cantidad_rango_4')), cantidad_rango_5=Sum(F('cantidad_rango_5')))
 		response.context_data['raciones_semana_rango_etario'] = cantidad_raciones_rango_etario_dias
 
 		# Cantidad de raciones por comida de los ultimos 7 dias
@@ -250,12 +249,11 @@ class ReportesRacionesAdmin(admin.ModelAdmin):
 		# Luego creamos una lista de diccionarios con las cantidades correctas
 		cantidad_raciones_comida_dias = []
 		for item in comidas_unicas_dias:
-			encuesta = Encuesta.objects.get(id=item['encuesta'])
-			total_comensales = encuesta.cantidad_rango_1 + encuesta.cantidad_rango_2 + encuesta.cantidad_rango_3 + encuesta.cantidad_rango_4
+			# Usar 1 por cada comida servida (no multiplicar por comensales)
 			cantidad_raciones_comida_dias.append({
 				'encuesta__fecha': item['encuesta__fecha'],
 				'comida__nombre': item['comida__nombre'],
-				'cantidad': total_comensales
+				'cantidad': 1  # 1 comida servida por encuesta
 			})
 		
 		# Agrupamos por fecha y comida, sumando las cantidades
@@ -346,7 +344,7 @@ class ReportesNutricionalesAdmin(admin.ModelAdmin):
 			print(f"Alimentos en encuesta: {alimentos_encuesta.count()}")
 			
 			# Calcular total de comensales
-			total_comensales = encuesta.cantidad_rango_1 + encuesta.cantidad_rango_2 + encuesta.cantidad_rango_3 + encuesta.cantidad_rango_4
+			total_comensales = encuesta.cantidad_rango_1 + encuesta.cantidad_rango_2 + encuesta.cantidad_rango_3 + encuesta.cantidad_rango_4 + encuesta.cantidad_rango_5
 			print(f"Comensales: {total_comensales} (rango1:{encuesta.cantidad_rango_1}, rango2:{encuesta.cantidad_rango_2}, rango3:{encuesta.cantidad_rango_3}, rango4:{encuesta.cantidad_rango_4})")
 			
 			if total_comensales > 0:
@@ -455,7 +453,7 @@ class ReportesNutricionalesAdmin(admin.ModelAdmin):
 			alimentos_encuesta = AlimentoEncuesta.objects.filter(encuesta=encuesta)
 			
 			# Calcular total de comensales
-			total_comensales = encuesta.cantidad_rango_1 + encuesta.cantidad_rango_2 + encuesta.cantidad_rango_3 + encuesta.cantidad_rango_4
+			total_comensales = encuesta.cantidad_rango_1 + encuesta.cantidad_rango_2 + encuesta.cantidad_rango_3 + encuesta.cantidad_rango_4 + encuesta.cantidad_rango_5
 			
 			if total_comensales > 0:
 				# Calcular nutrientes por comensal

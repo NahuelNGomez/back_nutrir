@@ -13,7 +13,7 @@ class FuncionamientoComedorInline(admin.TabularInline):
 
 class ComedorAdmin(admin.ModelAdmin):
 
-	list_display = ['nombre', 'servicio_comedor', 'organizacion_regional', 'provincia', ]
+	list_display = ['nombre', 'get_servicios_comedor', 'organizacion_regional', 'provincia', ]
 	search_fields = ('nombre', 'servicio_comedor', 'organizacion_regional', 'provincia',)
 	list_filter = ('provincia', 'organizacion_regional', 'asistentes_diarios', 'servicio_comedor')
 
@@ -57,6 +57,11 @@ class ComedorAdmin(admin.ModelAdmin):
 			return model.objects.filter(id__in=organizacion_ids).distinct()
 
 		return model.objects.all()
+
+	def get_servicios_comedor(self, obj):
+		"""Muestra los servicios del comedor en la lista del admin"""
+		return ", ".join([servicio.nombre for servicio in obj.servicio_comedor.all()])
+	get_servicios_comedor.short_description = 'Servicios del Comedor'
 
 	def formfield_for_foreignkey(self, db_field, request, **kwargs):
 

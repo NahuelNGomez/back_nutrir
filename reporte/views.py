@@ -15,7 +15,7 @@ from comedor.models import Comedor
 
 def racionesPorDia(comedor, fecha_inicio, fecha_fin):
 	lista = Encuesta.objects.filter(comedor=comedor, fecha__range=(fecha_inicio, fecha_fin))
-	lista = lista.values('fecha').annotate(cantidad=Sum(	F('cantidad_rango_1') + F('cantidad_rango_2') + F('cantidad_rango_3') + F('cantidad_rango_4'))).order_by('fecha')
+	lista = lista.values('fecha').annotate(cantidad=Sum(	F('cantidad_rango_1') + F('cantidad_rango_2') + F('cantidad_rango_3') + F('cantidad_rango_4') + F('cantidad_rango_5'))).order_by('fecha')
 	return lista
 
 class RacionesMesViewList(generics.ListAPIView):
@@ -65,12 +65,11 @@ def getComidaDia(comedor, fecha_inicio, fecha_fin):
 	# Luego creamos una lista de diccionarios con las cantidades correctas
 	cantidad_raciones_comida_dias = []
 	for item in comidas_unicas:
-		encuesta = Encuesta.objects.get(id=item['encuesta'])
-		total_comensales = encuesta.cantidad_rango_1 + encuesta.cantidad_rango_2 + encuesta.cantidad_rango_3 + encuesta.cantidad_rango_4
+		# Usar 1 por cada comida servida (no multiplicar por comensales)
 		cantidad_raciones_comida_dias.append({
 			'encuesta__fecha': item['encuesta__fecha'],
 			'comida__nombre': item['comida__nombre'],
-			'cantidad': total_comensales
+			'cantidad': 1  # 1 comida servida por encuesta
 		})
 	
 	# Agrupamos por fecha y comida, sumando las cantidades
@@ -139,7 +138,7 @@ class ComidasSemanaViewList(generics.ListAPIView):
 def calcular_nutrientes_por_encuesta(encuesta):
 	"""Calcula los nutrientes promedio por comensal para una encuesta"""
 	alimentos_encuesta = AlimentoEncuesta.objects.filter(encuesta=encuesta)
-	total_comensales = encuesta.cantidad_rango_1 + encuesta.cantidad_rango_2 + encuesta.cantidad_rango_3 + encuesta.cantidad_rango_4
+	total_comensales = encuesta.cantidad_rango_1 + encuesta.cantidad_rango_2 + encuesta.cantidad_rango_3 + encuesta.cantidad_rango_4 + encuesta.cantidad_rango_5
 	
 	if total_comensales == 0:
 		return None

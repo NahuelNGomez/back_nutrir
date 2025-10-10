@@ -372,6 +372,7 @@
 		let rango_2 = []
 		let rango_3 = []
 		let rango_4 = []
+		let rango_5 = []
 		xValues_mes = []
 
 		{% for r in raciones_mes_rango_etario %}
@@ -379,6 +380,7 @@
 			rango_2.push('{{r.cantidad_rango_2}}')
 			rango_3.push('{{r.cantidad_rango_3}}')
 			rango_4.push('{{r.cantidad_rango_4}}')
+			rango_5.push('{{r.cantidad_rango_5}}')
 			xValues_mes.push('{{r.fecha__month}}'+'/'+'{{r.fecha__year}}')
 		{% endfor %}
 
@@ -388,20 +390,24 @@
 						data: {
 							labels: xValues_mes,
 							datasets: [{
-							  label: '1 a 3',
+							  label: 'Infantes (0-5 años)',
 							  data: rango_1,
 							  backgroundColor: randomColorGenerator(),
 							}, {
-							  label: '4 a 6',
+							  label: 'Niñxs (5-10 años)',
 							  data: rango_2,
 							  backgroundColor: randomColorGenerator(),
 							}, {
-							  label: '7 a 9',
+							  label: 'Adolescentes (10-18 años)',
 							  data: rango_3,
 							  backgroundColor: randomColorGenerator(),
 							}, {
-							  label: 'mas de 10',
+							  label: 'Adultos (18-60 años)',
 							  data: rango_4,
+							  backgroundColor: randomColorGenerator(),
+							}, {
+							  label: 'Adultos mayores (+60 años)',
+							  data: rango_5,
 							  backgroundColor: randomColorGenerator(),
 							}]
 						},
@@ -426,6 +432,7 @@
 		rango_2 = []
 		rango_3 = []
 		rango_4 = []
+		rango_5 = []
 		xValues_semana = []
 
 		{% for r in raciones_semana_rango_etario %}
@@ -433,6 +440,7 @@
 			rango_2.push('{{r.cantidad_rango_2}}')
 			rango_3.push('{{r.cantidad_rango_3}}')
 			rango_4.push('{{r.cantidad_rango_4}}')
+			rango_5.push('{{r.cantidad_rango_5}}')
 			xValues_semana.push('{{r.fecha}}')
 		{% endfor %}
 
@@ -442,20 +450,24 @@
 						data: {
 							labels: xValues_semana,
 							datasets: [{
-							  label: '1 a 3',
+							  label: 'Infantes (0-5 años)',
 							  data: rango_1,
 							  backgroundColor: randomColorGenerator(),
 							}, {
-							  label: '4 a 6',
+							  label: 'Niñxs (5-10 años)',
 							  data: rango_2,
 							  backgroundColor: randomColorGenerator(),
 							}, {
-							  label: '7 a 9',
+							  label: 'Adolescentes (10-18 años)',
 							  data: rango_3,
 							  backgroundColor: randomColorGenerator(),
 							}, {
-							  label: 'mas de 10',
+							  label: 'Adultos (18-60 años)',
 							  data: rango_4,
+							  backgroundColor: randomColorGenerator(),
+							}, {
+							  label: 'Adultos mayores (+60 años)',
+							  data: rango_5,
 							  backgroundColor: randomColorGenerator(),
 							}]
 						},

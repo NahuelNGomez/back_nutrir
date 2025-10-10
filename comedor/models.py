@@ -37,7 +37,7 @@ FUNCIONAMIENTO_CHOICES = (
 class Comedor(models.Model):
     #SOLAPA GENERAL
     nombre = models.CharField("Nombre", max_length=100, null=False, blank=False)
-    servicio_comedor = models.ForeignKey(ServicioComedor, models.CASCADE, null=True, blank=True)
+    servicio_comedor = models.ManyToManyField(ServicioComedor, blank=True)
     activo = models.BooleanField('Activo', default=True)
     organizacion_regional = models.ForeignKey(Organizacion,on_delete=models.CASCADE, null=False, blank=False)
     #SOLAPA UBICACION
