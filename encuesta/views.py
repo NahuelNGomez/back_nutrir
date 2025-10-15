@@ -275,7 +275,8 @@ class EncuestasViewList(generics.ListAPIView):
 						'encuesta': serializerEncuesta.data['id'],
 						'comida': comida['comida'],
 						'cantidad': a['cantidad'],
-						'unidad': a['unidad']
+						'unidad': a['unidad'],
+						'etapa_comida': comida.get('etapa_comida', 'plato_principal')  # Usar etapa_comida del frontend o default
 					}
 					print(f"data para AlimentoEncuestaCompletoSerializer: {data}")
 					
