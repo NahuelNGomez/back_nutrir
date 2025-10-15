@@ -147,20 +147,35 @@ class AlimentoAdminForm(forms.ModelForm):
                 
         # Si se ha seleccionado un alimento de la tabla SARA, se completan los campos automaticamente
         if alimento_sara:
-            cleaned_data['nombre'] = alimento_sara.nombre
-            cleaned_data['cantidad_porcion'] = alimento_sara.cantidad_porcion
-            cleaned_data['hidratos_carbono'] = alimento_sara.hidratos_carbono
-            cleaned_data['proteinas'] = alimento_sara.proteinas
-            cleaned_data['grasas'] = alimento_sara.grasas
-            cleaned_data['grasas_totales'] = alimento_sara.grasas_totales
-            cleaned_data['energia'] = alimento_sara.energia
-            cleaned_data['sodio'] = alimento_sara.sodio
+            # Solo completar el nombre si el usuario no lo cambió o está vacío
+            if not cleaned_data.get('nombre') or cleaned_data.get('nombre') == alimento_sara.nombre:
+                cleaned_data['nombre'] = alimento_sara.nombre
             
-		# Si no se seleccionó un alimento de la tabla SARA, se deben ingresar manualmente
-        else:
-            for field in ['nombre', 'cantidad_porcion', 'hidratos_carbono', 'proteinas', 'grasas', 'grasas_totales', 'energia', 'sodio']:
-                if not cleaned_data.get(field):
-                    self.add_error(field, 'Este campo es requerido.') # Marco todos los campos como requeridos
+            # Completar los otros campos nutricionales solo si están vacíos (None o '')
+            if cleaned_data.get('cantidad_porcion') is None or cleaned_data.get('cantidad_porcion') == '':
+                cleaned_data['cantidad_porcion'] = alimento_sara.cantidad_porcion
+            if cleaned_data.get('hidratos_carbono') is None or cleaned_data.get('hidratos_carbono') == '':
+                cleaned_data['hidratos_carbono'] = alimento_sara.hidratos_carbono
+            if cleaned_data.get('proteinas') is None or cleaned_data.get('proteinas') == '':
+                cleaned_data['proteinas'] = alimento_sara.proteinas
+            if cleaned_data.get('grasas') is None or cleaned_data.get('grasas') == '':
+                cleaned_data['grasas'] = alimento_sara.grasas
+            if cleaned_data.get('grasas_totales') is None or cleaned_data.get('grasas_totales') == '':
+                cleaned_data['grasas_totales'] = alimento_sara.grasas_totales
+            if cleaned_data.get('energia') is None or cleaned_data.get('energia') == '':
+                cleaned_data['energia'] = alimento_sara.energia
+            if cleaned_data.get('sodio') is None or cleaned_data.get('sodio') == '':
+                cleaned_data['sodio'] = alimento_sara.sodio
+        
+        # Asegurar que los campos vacíos se guarden como 0.00
+        campos_nutricionales = ['cantidad_porcion', 'hidratos_carbono', 'proteinas', 'grasas', 'grasas_totales', 'energia', 'sodio']
+        for campo in campos_nutricionales:
+            if cleaned_data.get(campo) is None or cleaned_data.get(campo) == '':
+                cleaned_data[campo] = 0.00
+            
+        # Solo el nombre es requerido
+        if not cleaned_data.get('nombre'):
+            self.add_error('nombre', 'Este campo es requerido.')
 
         return cleaned_data
 
