@@ -60,22 +60,43 @@ def getComidaDia(comedor, fecha_inicio, fecha_fin):
 	comidas_unicas = AlimentoEncuesta.objects.filter(
 		encuesta__fecha__range=(fecha_inicio, fecha_fin), 
 		encuesta__comedor=comedor
-	).values('encuesta', 'comida__nombre', 'encuesta__fecha').distinct()
+	).values('encuesta', 'comida__nombre', 'encuesta__fecha', 'encuesta__funcionamiento').distinct()
+	
+	# Agrupamos las comidas por encuesta y funcionamiento para poder dividir las raciones
+	from collections import defaultdict
+	encuestas_comidas = defaultdict(lambda: defaultdict(list))
+	
+	for item in comidas_unicas:
+		encuesta_id = item['encuesta']
+		funcionamiento = item['encuesta__funcionamiento']
+		comida_nombre = item['comida__nombre']
+		fecha = item['encuesta__fecha']
+		
+		encuestas_comidas[encuesta_id][funcionamiento].append({
+			'comida_nombre': comida_nombre,
+			'fecha': fecha
+		})
 	
 	# Luego creamos una lista de diccionarios con las cantidades correctas
 	cantidad_raciones_comida_dias = []
-	for item in comidas_unicas:
-		encuesta = Encuesta.objects.get(id=item['encuesta'])
+	for encuesta_id, funcionamientos in encuestas_comidas.items():
+		encuesta = Encuesta.objects.get(id=encuesta_id)
 		total_comensales = encuesta.cantidad_rango_1 + encuesta.cantidad_rango_2 + encuesta.cantidad_rango_3 + encuesta.cantidad_rango_4
-		cantidad_raciones_comida_dias.append({
-			'encuesta__fecha': item['encuesta__fecha'],
-			'comida__nombre': item['comida__nombre'],
-			'cantidad': total_comensales
-		})
+		
+		for funcionamiento, comidas in funcionamientos.items():
+			# Dividir las raciones entre la cantidad de comidas del mismo funcionamiento
+			comidas_count = len(comidas)
+			raciones_por_comida = total_comensales / comidas_count if comidas_count > 0 else total_comensales
+			
+			for comida_info in comidas:
+				cantidad_raciones_comida_dias.append({
+					'encuesta__fecha': comida_info['fecha'],
+					'comida__nombre': comida_info['comida_nombre'],
+					'cantidad': raciones_por_comida
+				})
 	
 	# Agrupamos por fecha y comida, sumando las cantidades
-	from collections import defaultdict
-	agrupado = defaultdict(int)
+	agrupado = defaultdict(float)
 	for item in cantidad_raciones_comida_dias:
 		key = (item['encuesta__fecha'], item['comida__nombre'])
 		agrupado[key] += item['cantidad']
@@ -90,7 +111,7 @@ def getComidaDia(comedor, fecha_inicio, fecha_fin):
 		datos_por_fecha = []
 		for fecha in fechas:
 			cantidad = agrupado.get((fecha, comida), 0)
-			datos_por_fecha.append(cantidad)
+			datos_por_fecha.append(round(cantidad, 2))  # Redondeamos a 2 decimales
 		
 		comida_semana.append({
 			'label': comida,

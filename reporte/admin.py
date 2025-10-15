@@ -1,4 +1,4 @@
-from collections import Counter
+from collections import Counter, defaultdict
 from datetime import date, timedelta
 from itertools import chain
 
@@ -168,29 +168,51 @@ class ReportesRacionesAdmin(admin.ModelAdmin):
 
 		# Cantidad de raciones por comida de los ultimos 12 meses
 		# Usamos una aproximación diferente: obtenemos las comidas únicas por encuesta
-		# y luego sumamos las cantidades de comensales una sola vez por comida
+		# y luego sumamos las cantidades de comensales divididas por funcionamiento
 		
-		# Primero obtenemos todas las comidas únicas por encuesta
+		# Primero obtenemos todas las comidas únicas por encuesta con funcionamiento
 		comidas_unicas = AlimentoEncuesta.objects.filter(
 			encuesta__fecha__range=(fecha_limite, today), 
 			encuesta__comedor__in=lc
-		).values('encuesta', 'comida__nombre', 'encuesta__fecha__year', 'encuesta__fecha__month').distinct()
+		).values('encuesta', 'comida__nombre', 'encuesta__fecha__year', 'encuesta__fecha__month', 'encuesta__funcionamiento').distinct()
+		
+		# Agrupamos las comidas por encuesta y funcionamiento para poder dividir las raciones
+		encuestas_comidas_meses = defaultdict(lambda: defaultdict(list))
+		
+		for item in comidas_unicas:
+			encuesta_id = item['encuesta']
+			funcionamiento = item['encuesta__funcionamiento']
+			comida_nombre = item['comida__nombre']
+			year = item['encuesta__fecha__year']
+			month = item['encuesta__fecha__month']
+			
+			encuestas_comidas_meses[encuesta_id][funcionamiento].append({
+				'comida_nombre': comida_nombre,
+				'year': year,
+				'month': month
+			})
 		
 		# Luego creamos una lista de diccionarios con las cantidades correctas
 		cantidad_raciones_comida_meses = []
-		for item in comidas_unicas:
-			encuesta = Encuesta.objects.get(id=item['encuesta'])
+		for encuesta_id, funcionamientos in encuestas_comidas_meses.items():
+			encuesta = Encuesta.objects.get(id=encuesta_id)
 			total_comensales = encuesta.cantidad_rango_1 + encuesta.cantidad_rango_2 + encuesta.cantidad_rango_3 + encuesta.cantidad_rango_4
-			cantidad_raciones_comida_meses.append({
-				'encuesta__fecha__year': item['encuesta__fecha__year'],
-				'encuesta__fecha__month': item['encuesta__fecha__month'],
-				'comida__nombre': item['comida__nombre'],
-				'cantidad': total_comensales
-			})
+			
+			for funcionamiento, comidas in funcionamientos.items():
+				# Dividir las raciones entre la cantidad de comidas del mismo funcionamiento
+				comidas_count = len(comidas)
+				raciones_por_comida = total_comensales / comidas_count if comidas_count > 0 else total_comensales
+				
+				for comida_info in comidas:
+					cantidad_raciones_comida_meses.append({
+						'encuesta__fecha__year': comida_info['year'],
+						'encuesta__fecha__month': comida_info['month'],
+						'comida__nombre': comida_info['comida_nombre'],
+						'cantidad': raciones_por_comida
+					})
 		
 		# Agrupamos por fecha y comida, sumando las cantidades
-		from collections import defaultdict
-		agrupado = defaultdict(int)
+		agrupado = defaultdict(float)
 		for item in cantidad_raciones_comida_meses:
 			key = (item['encuesta__fecha__year'], item['encuesta__fecha__month'], item['comida__nombre'])
 			agrupado[key] += item['cantidad']
@@ -201,7 +223,7 @@ class ReportesRacionesAdmin(admin.ModelAdmin):
 				'encuesta__fecha__year': year,
 				'encuesta__fecha__month': month,
 				'comida__nombre': comida,
-				'cantidad': cantidad
+				'cantidad': round(cantidad, 2)
 			}
 			for (year, month, comida), cantidad in agrupado.items()
 		]
@@ -241,25 +263,46 @@ class ReportesRacionesAdmin(admin.ModelAdmin):
 		response.context_data['raciones_semana_rango_etario'] = cantidad_raciones_rango_etario_dias
 
 		# Cantidad de raciones por comida de los ultimos 7 dias
-		# Obtenemos las comidas únicas por encuesta
+		# Obtenemos las comidas únicas por encuesta con funcionamiento
 		comidas_unicas_dias = AlimentoEncuesta.objects.filter(
 			encuesta__fecha__range=(fecha, today), 
 			encuesta__comedor__in=lc
-		).values('encuesta', 'comida__nombre', 'encuesta__fecha').distinct()
+		).values('encuesta', 'comida__nombre', 'encuesta__fecha', 'encuesta__funcionamiento').distinct()
+		
+		# Agrupamos las comidas por encuesta y funcionamiento para poder dividir las raciones
+		encuestas_comidas_dias = defaultdict(lambda: defaultdict(list))
+		
+		for item in comidas_unicas_dias:
+			encuesta_id = item['encuesta']
+			funcionamiento = item['encuesta__funcionamiento']
+			comida_nombre = item['comida__nombre']
+			fecha_item = item['encuesta__fecha']
+			
+			encuestas_comidas_dias[encuesta_id][funcionamiento].append({
+				'comida_nombre': comida_nombre,
+				'fecha': fecha_item
+			})
 		
 		# Luego creamos una lista de diccionarios con las cantidades correctas
 		cantidad_raciones_comida_dias = []
-		for item in comidas_unicas_dias:
-			encuesta = Encuesta.objects.get(id=item['encuesta'])
+		for encuesta_id, funcionamientos in encuestas_comidas_dias.items():
+			encuesta = Encuesta.objects.get(id=encuesta_id)
 			total_comensales = encuesta.cantidad_rango_1 + encuesta.cantidad_rango_2 + encuesta.cantidad_rango_3 + encuesta.cantidad_rango_4
-			cantidad_raciones_comida_dias.append({
-				'encuesta__fecha': item['encuesta__fecha'],
-				'comida__nombre': item['comida__nombre'],
-				'cantidad': total_comensales
-			})
+			
+			for funcionamiento, comidas in funcionamientos.items():
+				# Dividir las raciones entre la cantidad de comidas del mismo funcionamiento
+				comidas_count = len(comidas)
+				raciones_por_comida = total_comensales / comidas_count if comidas_count > 0 else total_comensales
+				
+				for comida_info in comidas:
+					cantidad_raciones_comida_dias.append({
+						'encuesta__fecha': comida_info['fecha'],
+						'comida__nombre': comida_info['comida_nombre'],
+						'cantidad': raciones_por_comida
+					})
 		
 		# Agrupamos por fecha y comida, sumando las cantidades
-		agrupado_dias = defaultdict(int)
+		agrupado_dias = defaultdict(float)
 		for item in cantidad_raciones_comida_dias:
 			key = (item['encuesta__fecha'], item['comida__nombre'])
 			agrupado_dias[key] += item['cantidad']
@@ -267,11 +310,11 @@ class ReportesRacionesAdmin(admin.ModelAdmin):
 		# Convertimos a la estructura esperada
 		cantidad_raciones_comida_dias = [
 			{
-				'encuesta__fecha': fecha,
+				'encuesta__fecha': fecha_item,
 				'comida__nombre': comida,
-				'cantidad': cantidad
+				'cantidad': round(cantidad, 2)
 			}
-			for (fecha, comida), cantidad in agrupado_dias.items()
+			for (fecha_item, comida), cantidad in agrupado_dias.items()
 		]
 		cantidad_raciones_comida_dias.sort(key=lambda x: (x['encuesta__fecha'], x['comida__nombre']))
 		comidas = set([item['comida__nombre'] for item in cantidad_raciones_comida_dias])
