@@ -16,6 +16,14 @@ FUNCIONAMIENTO_CHOICES = (
     #("olla_popular", "Olla Popular"),
 )
 
+ETAPA_COMIDA_CHOICES = (
+    ("entrada", "Entrada"),
+    ("plato_principal", "Plato Principal"),
+    ("postre", "Postre"),
+    ("bebida", "Bebida"),
+    ("acompañamiento", "Acompañamiento"),
+)
+
 class Encuesta(models.Model):
 
     fecha = models.DateField('Fecha de inicio de actividad', blank=False, null=False)
@@ -43,6 +51,7 @@ class AlimentoEncuesta(models.Model):
 	comida = models.ForeignKey(Comida,  models.CASCADE)
 	cantidad = models.DecimalField(decimal_places=3, max_digits=10, validators=[MinValueValidator(0.001)])
 	unidad = models.ForeignKey(Unidad, models.CASCADE, default=None)
+	etapa_comida = models.CharField("Etapa de la comida", max_length=30, choices=ETAPA_COMIDA_CHOICES, default="plato_principal")
 
 	def __str__(self):
 		return f"{self.alimento.nombre}"

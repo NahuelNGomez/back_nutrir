@@ -60,40 +60,53 @@ def getComidaDia(comedor, fecha_inicio, fecha_fin):
 	comidas_unicas = AlimentoEncuesta.objects.filter(
 		encuesta__fecha__range=(fecha_inicio, fecha_fin), 
 		encuesta__comedor=comedor
-	).values('encuesta', 'comida__nombre', 'encuesta__fecha', 'encuesta__funcionamiento').distinct()
+	).values('encuesta', 'comida__nombre', 'encuesta__fecha', 'etapa_comida').distinct()
 	
-	# Agrupamos las comidas por encuesta y funcionamiento para poder dividir las raciones
+	# Agrupamos las comidas por encuesta y etapa_comida para poder dividir las raciones
 	from collections import defaultdict
 	encuestas_comidas = defaultdict(lambda: defaultdict(list))
 	
 	for item in comidas_unicas:
 		encuesta_id = item['encuesta']
-		funcionamiento = item['encuesta__funcionamiento']
+		etapa_comida = item['etapa_comida']
 		comida_nombre = item['comida__nombre']
 		fecha = item['encuesta__fecha']
 		
-		encuestas_comidas[encuesta_id][funcionamiento].append({
+		# Agrupamos por etapa_comida (ej: todas las "entradas")
+		encuestas_comidas[encuesta_id][etapa_comida].append({
 			'comida_nombre': comida_nombre,
+			'etapa_comida': etapa_comida,
 			'fecha': fecha
 		})
 	
 	# Luego creamos una lista de diccionarios con las cantidades correctas
 	cantidad_raciones_comida_dias = []
-	for encuesta_id, funcionamientos in encuestas_comidas.items():
+	for encuesta_id, etapas_comida in encuestas_comidas.items():
 		encuesta = Encuesta.objects.get(id=encuesta_id)
 		total_comensales = encuesta.cantidad_rango_1 + encuesta.cantidad_rango_2 + encuesta.cantidad_rango_3 + encuesta.cantidad_rango_4
 		
-		for funcionamiento, comidas in funcionamientos.items():
-			# Dividir las raciones entre la cantidad de comidas del mismo funcionamiento
+		for etapa_comida, comidas in etapas_comida.items():
+			# Dividir los comensales entre las comidas de la misma etapa
+			# Si hay 2 comensales y 2 entradas: cada entrada = 1 comensal
 			comidas_count = len(comidas)
-			raciones_por_comida = total_comensales / comidas_count if comidas_count > 0 else total_comensales
-			
-			for comida_info in comidas:
-				cantidad_raciones_comida_dias.append({
-					'encuesta__fecha': comida_info['fecha'],
-					'comida__nombre': comida_info['comida_nombre'],
-					'cantidad': raciones_por_comida
-				})
+			if comidas_count > 0:
+				# Calcular cuántos comensales come cada comida
+				comensales_base = total_comensales // comidas_count  # División entera
+				comensales_extra = total_comensales % comidas_count   # Resto para distribuir
+				
+				for i, comida_info in enumerate(comidas):
+					# Las primeras 'comensales_extra' comidas reciben un comensal adicional
+					raciones_por_comida = comensales_base + (1 if i < comensales_extra else 0)
+					
+					cantidad_raciones_comida_dias.append({
+						'encuesta__fecha': comida_info['fecha'],
+						'comida__nombre': comida_info['comida_nombre'],
+						'etapa_comida': comida_info['etapa_comida'],
+						'cantidad': raciones_por_comida
+					})
+			else:
+				# Si no hay comidas, no agregamos nada
+				pass
 	
 	# Agrupamos por fecha y comida, sumando las cantidades
 	agrupado = defaultdict(float)

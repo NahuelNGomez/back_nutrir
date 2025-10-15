@@ -170,23 +170,23 @@ class ReportesRacionesAdmin(admin.ModelAdmin):
 		# Usamos una aproximación diferente: obtenemos las comidas únicas por encuesta
 		# y luego sumamos las cantidades de comensales divididas por funcionamiento
 		
-		# Primero obtenemos todas las comidas únicas por encuesta con funcionamiento
+		# Primero obtenemos todas las comidas únicas por encuesta con etapa_comida
 		comidas_unicas = AlimentoEncuesta.objects.filter(
 			encuesta__fecha__range=(fecha_limite, today), 
 			encuesta__comedor__in=lc
-		).values('encuesta', 'comida__nombre', 'encuesta__fecha__year', 'encuesta__fecha__month', 'encuesta__funcionamiento').distinct()
+		).values('encuesta', 'comida__nombre', 'encuesta__fecha__year', 'encuesta__fecha__month', 'etapa_comida').distinct()
 		
-		# Agrupamos las comidas por encuesta y funcionamiento para poder dividir las raciones
+		# Agrupamos las comidas por encuesta y etapa_comida para poder dividir las raciones
 		encuestas_comidas_meses = defaultdict(lambda: defaultdict(list))
 		
 		for item in comidas_unicas:
 			encuesta_id = item['encuesta']
-			funcionamiento = item['encuesta__funcionamiento']
+			etapa_comida = item['etapa_comida']
 			comida_nombre = item['comida__nombre']
 			year = item['encuesta__fecha__year']
 			month = item['encuesta__fecha__month']
 			
-			encuestas_comidas_meses[encuesta_id][funcionamiento].append({
+			encuestas_comidas_meses[encuesta_id][etapa_comida].append({
 				'comida_nombre': comida_nombre,
 				'year': year,
 				'month': month
@@ -194,22 +194,32 @@ class ReportesRacionesAdmin(admin.ModelAdmin):
 		
 		# Luego creamos una lista de diccionarios con las cantidades correctas
 		cantidad_raciones_comida_meses = []
-		for encuesta_id, funcionamientos in encuestas_comidas_meses.items():
+		for encuesta_id, etapas_comida in encuestas_comidas_meses.items():
 			encuesta = Encuesta.objects.get(id=encuesta_id)
 			total_comensales = encuesta.cantidad_rango_1 + encuesta.cantidad_rango_2 + encuesta.cantidad_rango_3 + encuesta.cantidad_rango_4
 			
-			for funcionamiento, comidas in funcionamientos.items():
-				# Dividir las raciones entre la cantidad de comidas del mismo funcionamiento
+			for etapa_comida, comidas in etapas_comida.items():
+				# Dividir los comensales entre las comidas de la misma etapa
+				# Si hay 2 comensales y 2 entradas: cada entrada = 1 comensal
 				comidas_count = len(comidas)
-				raciones_por_comida = total_comensales / comidas_count if comidas_count > 0 else total_comensales
-				
-				for comida_info in comidas:
-					cantidad_raciones_comida_meses.append({
-						'encuesta__fecha__year': comida_info['year'],
-						'encuesta__fecha__month': comida_info['month'],
-						'comida__nombre': comida_info['comida_nombre'],
-						'cantidad': raciones_por_comida
-					})
+				if comidas_count > 0:
+					# Calcular cuántos comensales come cada comida
+					comensales_base = total_comensales // comidas_count  # División entera
+					comensales_extra = total_comensales % comidas_count   # Resto para distribuir
+					
+					for i, comida_info in enumerate(comidas):
+						# Las primeras 'comensales_extra' comidas reciben un comensal adicional
+						raciones_por_comida = comensales_base + (1 if i < comensales_extra else 0)
+						
+						cantidad_raciones_comida_meses.append({
+							'encuesta__fecha__year': comida_info['year'],
+							'encuesta__fecha__month': comida_info['month'],
+							'comida__nombre': comida_info['comida_nombre'],
+							'cantidad': raciones_por_comida
+						})
+				else:
+					# Si no hay comidas, no agregamos nada
+					pass
 		
 		# Agrupamos por fecha y comida, sumando las cantidades
 		agrupado = defaultdict(float)
@@ -290,9 +300,9 @@ class ReportesRacionesAdmin(admin.ModelAdmin):
 			total_comensales = encuesta.cantidad_rango_1 + encuesta.cantidad_rango_2 + encuesta.cantidad_rango_3 + encuesta.cantidad_rango_4
 			
 			for funcionamiento, comidas in funcionamientos.items():
-				# Dividir las raciones entre la cantidad de comidas del mismo funcionamiento
-				comidas_count = len(comidas)
-				raciones_por_comida = total_comensales / comidas_count if comidas_count > 0 else total_comensales
+				# Cada comida debe contar las raciones completas de todos los comensales
+				# No dividimos entre la cantidad de comidas porque cada comida es consumida por todos los comensales
+				raciones_por_comida = total_comensales  # Cada comida tiene las raciones de todos los comensales
 				
 				for comida_info in comidas:
 					cantidad_raciones_comida_dias.append({
