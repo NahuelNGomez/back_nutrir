@@ -481,37 +481,27 @@
 			lista_fechas.push('{{f}}')
 		{% endfor %}
 
-		i = 0
-		m = []
-		let comida_mes = []
-		let comida = ''
-
+		// Agrupamos los datos por comida
+		let datos_por_comida = {}
 		{% for r in raciones_comida_mes %}
-			while (i<1){
-				comida = '{{r.comida__nombre}}'
-				i = 1
+			if (!datos_por_comida['{{r.comida__nombre}}']) {
+				datos_por_comida['{{r.comida__nombre}}'] = {}
 			}
-			if ('{{r.comida__nombre}}' === comida){
-				m.push('{{r.cantidad}}')
-			}
-			else {
-				comida_mes.push({
-					'label': comida,
-					'data': m,
-					'backgroundColor': randomColorGenerator(),
-				})
-				comida = '{{r.comida__nombre}}'
-				m = []
-				m.push('{{r.cantidad}}')
-			}
+			datos_por_comida['{{r.comida__nombre}}']['{{r.encuesta__fecha__month}}/{{r.encuesta__fecha__year}}'] = {{r.cantidad}}
 		{% endfor %}
 
-		if (comida !== "") {
+		// Creamos los datasets para cada comida, ordenando por fecha
+		let comida_mes = []
+		for (let comida in datos_por_comida) {
+			let datos_ordenados = []
+			for (let fecha of lista_fechas) {
+				datos_ordenados.push(datos_por_comida[comida][fecha] || 0)
+			}
 			comida_mes.push({
-						'label': comida,
-						'data': m,
-						'backgroundColor': randomColorGenerator(),
-					})
+				'label': comida,
+				'data': datos_ordenados,
+				'backgroundColor': randomColorGenerator(),
+			})
 		}
 
 		var ctx = document.getElementById("raciones-comida-mes-chart");
@@ -543,37 +533,27 @@
 			lista_fechas.push('{{f}}')
 		{% endfor %}
 
-		i = 0
-		m = []
-		let comida_semana = []
-		comida = ""
-
+		// Agrupamos los datos por comida
+		let datos_por_comida_semana = {}
 		{% for r in raciones_comida_semana %}
-			while (i<1){
-				comida = '{{r.comida__nombre}}'
-				i = 1
+			if (!datos_por_comida_semana['{{r.comida__nombre}}']) {
+				datos_por_comida_semana['{{r.comida__nombre}}'] = {}
 			}
-			if ('{{r.comida__nombre}}' === comida){
-				m.push('{{r.cantidad}}')
-			}
-			else {
-				comida_semana.push({
-					'label': comida,
-					'data': m,
-					'backgroundColor': randomColorGenerator(),
-				})
-				comida = '{{r.comida__nombre}}'
-				m = []
-				m.push('{{r.cantidad}}')
-			}
+			datos_por_comida_semana['{{r.comida__nombre}}']['{{r.encuesta__fecha}}'] = {{r.cantidad}}
 		{% endfor %}
 
-		if (comida !== "") {
+		// Creamos los datasets para cada comida, ordenando por fecha
+		let comida_semana = []
+		for (let comida in datos_por_comida_semana) {
+			let datos_ordenados = []
+			for (let fecha of lista_fechas) {
+				datos_ordenados.push(datos_por_comida_semana[comida][fecha] || 0)
+			}
 			comida_semana.push({
-						'label': comida,
-						'data': m,
-						'backgroundColor': randomColorGenerator(),
-					})
+				'label': comida,
+				'data': datos_ordenados,
+				'backgroundColor': randomColorGenerator(),
+			})
 		}
 
 		var ctx = document.getElementById("raciones-comida-semana-chart");

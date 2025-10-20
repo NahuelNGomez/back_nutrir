@@ -273,43 +273,53 @@ class ReportesRacionesAdmin(admin.ModelAdmin):
 		response.context_data['raciones_semana_rango_etario'] = cantidad_raciones_rango_etario_dias
 
 		# Cantidad de raciones por comida de los ultimos 7 dias
-		# Obtenemos las comidas únicas por encuesta con funcionamiento
+		# Obtenemos las comidas únicas por encuesta con etapa_comida (igual que el frontend)
 		comidas_unicas_dias = AlimentoEncuesta.objects.filter(
 			encuesta__fecha__range=(fecha, today), 
 			encuesta__comedor__in=lc
-		).values('encuesta', 'comida__nombre', 'encuesta__fecha', 'encuesta__funcionamiento').distinct()
+		).values('encuesta', 'comida__nombre', 'encuesta__fecha', 'etapa_comida').distinct()
 		
-		# Agrupamos las comidas por encuesta y funcionamiento para poder dividir las raciones
+		# Agrupamos las comidas por encuesta y etapa_comida para poder dividir las raciones
 		encuestas_comidas_dias = defaultdict(lambda: defaultdict(list))
 		
 		for item in comidas_unicas_dias:
 			encuesta_id = item['encuesta']
-			funcionamiento = item['encuesta__funcionamiento']
+			etapa_comida = item['etapa_comida']
 			comida_nombre = item['comida__nombre']
 			fecha_item = item['encuesta__fecha']
 			
-			encuestas_comidas_dias[encuesta_id][funcionamiento].append({
+			encuestas_comidas_dias[encuesta_id][etapa_comida].append({
 				'comida_nombre': comida_nombre,
 				'fecha': fecha_item
 			})
 		
 		# Luego creamos una lista de diccionarios con las cantidades correctas
 		cantidad_raciones_comida_dias = []
-		for encuesta_id, funcionamientos in encuestas_comidas_dias.items():
+		for encuesta_id, etapas_comida in encuestas_comidas_dias.items():
 			encuesta = Encuesta.objects.get(id=encuesta_id)
 			total_comensales = encuesta.cantidad_rango_1 + encuesta.cantidad_rango_2 + encuesta.cantidad_rango_3 + encuesta.cantidad_rango_4
 			
-			for funcionamiento, comidas in funcionamientos.items():
-				# Cada comida debe contar las raciones completas de todos los comensales
-				# No dividimos entre la cantidad de comidas porque cada comida es consumida por todos los comensales
-				raciones_por_comida = total_comensales  # Cada comida tiene las raciones de todos los comensales
-				
-				for comida_info in comidas:
-					cantidad_raciones_comida_dias.append({
-						'encuesta__fecha': comida_info['fecha'],
-						'comida__nombre': comida_info['comida_nombre'],
-						'cantidad': raciones_por_comida
-					})
+			for etapa_comida, comidas in etapas_comida.items():
+				# Dividir los comensales entre las comidas de la misma etapa (igual que el frontend)
+				# Si hay 2 comensales y 2 entradas: cada entrada = 1 comensal
+				comidas_count = len(comidas)
+				if comidas_count > 0:
+					# Calcular cuántos comensales come cada comida
+					comensales_base = total_comensales // comidas_count  # División entera
+					comensales_extra = total_comensales % comidas_count   # Resto para distribuir
+					
+					for i, comida_info in enumerate(comidas):
+						# Las primeras 'comensales_extra' comidas reciben un comensal adicional
+						raciones_por_comida = comensales_base + (1 if i < comensales_extra else 0)
+						
+						cantidad_raciones_comida_dias.append({
+							'encuesta__fecha': comida_info['fecha'],
+							'comida__nombre': comida_info['comida_nombre'],
+							'cantidad': raciones_por_comida
+						})
+				else:
+					# Si no hay comidas, no agregamos nada
+					pass
 		
 		# Agrupamos por fecha y comida, sumando las cantidades
 		agrupado_dias = defaultdict(float)
